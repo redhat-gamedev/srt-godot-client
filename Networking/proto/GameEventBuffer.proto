@@ -1,0 +1,44 @@
+syntax = "proto2";
+package redhatgamedev.srt;
+
+import "EntityGameEventBuffer.proto";
+
+
+message JoinSecurityGameEventBuffer
+{
+    required string UUID = 1;
+}
+
+message LeaveSecurityGameEventBuffer
+{
+    required string UUID = 1;
+}
+
+message SecurityGameEventBuffer
+{
+	enum SecurityGameEventBufferType
+	{
+        UNKNOWN = 0;
+		JOIN = 1;
+		LEAVE = 2;
+	}
+	required SecurityGameEventBufferType type = 1 [default = UNKNOWN];
+
+    optional JoinSecurityGameEventBuffer joinSecurityGameEventBuffer = 3;
+    optional LeaveSecurityGameEventBuffer leaveSecurityGameEventBuffer = 4;
+}
+
+
+message GameEventBuffer
+{
+	enum GameEventBufferType
+	{
+        UNKNOWN = 0;
+		ENTITY = 1;
+        SECURITY = 2;
+	}
+	required GameEventBufferType type = 1 [default = UNKNOWN];
+	
+    optional EntityGameEventBuffer entityGameEventBuffer = 2;
+    optional SecurityGameEventBuffer securityGameEventBuffer = 3;
+}

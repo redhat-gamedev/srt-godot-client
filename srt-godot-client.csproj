@@ -1,0 +1,10 @@
+<Project Sdk="Godot.NET.Sdk/3.3.0">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>srtgodotclient</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AMQPNetLite" Version="2.4.3"/>
+    <PackageReference Include="protobuf-net" Version="3.0.125"/>
+  </ItemGroup>
+</Project>

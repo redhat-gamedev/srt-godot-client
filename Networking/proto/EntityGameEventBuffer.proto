@@ -1,0 +1,31 @@
+syntax = "proto2";
+package redhatgamedev.srt;
+import "box2d.proto";
+
+message EntityGameEventBuffer
+{
+	enum EntityGameEventBufferType
+	{
+    UNKNOWN = 0;
+		CREATE = 1;
+    RETRIEVE = 2;
+		UPDATE = 3;
+    DESTROY = 4;
+	}
+	required EntityGameEventBufferType type = 1 [default = UNKNOWN];
+
+	enum EntityGameEventBufferObjectType
+	{
+		UNKNOWN = 0;
+		PLAYER = 1;
+		MISSILE = 2;
+	}
+	required EntityGameEventBufferObjectType objectType = 2 [default = UNKNOWN];
+
+	required string UUID = 3;
+
+	// if the object in question belongs to someone, specify its owner here
+	// for example, a missile belongs to a specific player
+	optional string ownerUUID = 4;
+  optional box2d.PbBody body = 5;
+}

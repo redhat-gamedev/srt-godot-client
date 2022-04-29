@@ -1,0 +1,11 @@
+syntax = "proto2";
+package redhatgamedev.srt;
+
+import "box2d.proto";
+
+
+message DualStickRawInputCommandBuffer
+{
+    required box2d.PbVec2 pbv2Move = 1;
+    required box2d.PbVec2 pbv2Shoot = 2;
+}

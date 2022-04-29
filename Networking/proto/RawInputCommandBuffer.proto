@@ -1,0 +1,18 @@
+syntax = "proto2";
+package redhatgamedev.srt;
+
+import "DualStickRawInputCommandBuffer.proto";
+
+
+message RawInputCommandBuffer
+{
+    enum RawInputCommandBufferType
+    {
+        UNKNOWN = 0;
+        DUALSTICK = 1;
+    }
+    required RawInputCommandBufferType type = 1;// [default = UNKNOWN];
+
+    required string UUID = 2;
+    optional DualStickRawInputCommandBuffer dualStickRawInputCommandBuffer = 3;
+}

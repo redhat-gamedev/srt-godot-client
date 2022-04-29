@@ -1,0 +1,29 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+[application]
+
+config/name="srt-godot-client"
+run/main_scene="res://Scenes/MainScenes/Map.tscn"
+config/icon="res://icon.png"
+
+[autoload]
+
+GDLogger="*res://Autoload/logger.gd"
+CSLogger="*res://Autoload/CSLogger.cs"
+Server="*res://Networking/Server.cs"
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+environment/default_environment="res://default_env.tres"
