@@ -134,19 +134,20 @@ public class PlayerShip : KinematicBody2D
     cslogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
   }
 
-  void RemovePlayer()
-  {
-    cslogger.Verbose($"Player.cs: removing {uuid}");
-    Server theServer = (Server)GetNode("/root/Server");
-    theServer.RemovePlayer(uuid);
-  }
+  //void RemovePlayer()
+  //{
+  //  cslogger.Verbose($"Player.cs: removing {uuid}");
+  //  Server theServer = (Server)GetNode("/root/Server");
+  //  theServer.RemovePlayer(uuid);
+  //s}
 
   public override void _Process(float delta)
   {
     if (HitPoints <= 0)
     {
       cslogger.Debug("Hitpoints zeroed! Remove the player!");
-      RemovePlayer();
+      //RemovePlayer();
+      // TODO: you're dead - should this come from server of processed here?
     }
   }
 
@@ -169,7 +170,7 @@ public class PlayerShip : KinematicBody2D
     hitPointsLabel.Text = $"HP: {HitPoints}";
     positionLabel.Text = $"X: {GlobalPosition.x} Y: {GlobalPosition.y}";
 
-    Server theServer = GetNode<Server>("/root/Server");
+    // Server theServer = GetNode<Server>("/root/Server");
 
     // TODO: get this from server instead of calculating it
     //// figure out the hex from the pixel position
