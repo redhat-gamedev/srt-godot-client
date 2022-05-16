@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Scenes/MainScenes/MapOverlay.tscn" type="PackedScene" id=1]
+
+[node name="Game" type="Node"]
+
+[node name="MapCanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="MapOverlay" parent="MapCanvasLayer" instance=ExtResource( 1 )]
+anchor_left = 1.0
+anchor_bottom = 0.0
+margin_left = -1920.0
+margin_right = 0.0
+margin_bottom = 1080.0

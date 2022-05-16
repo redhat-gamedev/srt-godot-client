@@ -24,11 +24,11 @@ public class ServerConnection : Node
     Session amqpSession;
     SenderLink commandsSender;
     ReceiverLink gameEventsReceiver;
+    public static readonly string UUID = System.Guid.NewGuid().ToString();
     
     public override void _Ready()
     {
         cslogger = GetNode<CSLogger>("/root/CSLogger");
-        cslogger.Info("Space Ring Things (SRT) Game Client v???");
         
         var clientConfig = new ConfigFile();
         Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
@@ -74,17 +74,28 @@ public class ServerConnection : Node
         MemoryStream st = new MemoryStream(binaryBody, false);
         CommandBuffer commandBuffer;
         commandBuffer = Serializer.Deserialize<CommandBuffer>(st);
-        EmitSignal("ProcessGameEvent", commandBuffer);  // TODO: create signal handler
+        EmitSignal("NewGameEvent", commandBuffer);
     }
     
     public void SendCommand(CommandBuffer CommandBuffer)
     {
-        cslogger.Verbose("ServerConnection: Sending command");
-        MemoryStream st = new MemoryStream();
-        Serializer.Serialize<CommandBuffer>(st, CommandBuffer);
-        byte[] msgBytes = st.ToArray();
-        Message msg = new Message(msgBytes);
-        commandsSender.Send(msg, null, null); // don't care about the ack on our message being received
+        try
+        {
+            cslogger.Verbose("ServerConnection: Sending command");
+            MemoryStream st = new MemoryStream();
+            Serializer.Serialize<CommandBuffer>(st, CommandBuffer);
+            byte[] msgBytes = st.ToArray();
+            Message msg = new Message(msgBytes);
+            commandsSender.Send(msg, null, null); // don't care about the ack on our message being received
+        }
+        catch (Exception ex)
+        {
+            cslogger.Error("ServerConnection: Send Command failed.");
+            cslogger.Error(ex.Message);
+            
+            // TODO: let player know / return to login screen
+            return;
+        }
     }    
 
     async void InitializeAMQP()
@@ -101,29 +112,32 @@ public class ServerConnection : Node
             amqpConnection = await factory.CreateAsync(address);
             amqpSession = new Session(amqpConnection);
         }
-        catch (Exception es)
+        catch (Exception ex)
         {
             cslogger.Error("AMQP connection/session failed for " + url);
+            cslogger.Error(ex.Message);
             // TODO: let player know
             return;
         }
         
-        cslogger.Debug("Creating AMQ receiver for game events");
+        var linkid = "srt-game-client-receiver-" + UUID;
+        cslogger.Debug("Creating AMQ receiver for game events: " + linkid);
         Source eventInSource = new Source
         {
             Address = gameEventsTopic,
             Capabilities = new Symbol[] { new Symbol("topic") }
         };
-        gameEventsReceiver = new ReceiverLink(amqpSession, "srt-game-client-receiver", eventInSource, null);
+        gameEventsReceiver = new ReceiverLink(amqpSession, linkid, eventInSource, null);
         gameEventsReceiver.Start(10, GameEventReceived);
 
-        cslogger.Debug("Creating AMQ sender for player commands");
+        linkid = "srt-game-client-command-sender-" + UUID;
+        cslogger.Debug("Creating AMQ sender for player commands: " + linkid);
         Target commandOutTarget = new Target
         {
             Address = commandsQueue,
             Capabilities = new Symbol[] { new Symbol("queue") }
         };
-        commandsSender = new SenderLink(amqpSession, "srt-game-client-command-sender", commandOutTarget, null);
+        commandsSender = new SenderLink(amqpSession, linkid, commandOutTarget, null);
 
         cslogger.Debug("Finished initializing AMQP connection");
     }

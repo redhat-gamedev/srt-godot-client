@@ -11,18 +11,20 @@ config_version=4
 [application]
 
 config/name="srt-godot-client"
-run/main_scene="res://Scenes/MainScenes/Map.tscn"
+run/main_scene="res://Scenes/MainScenes/Game.tscn"
 config/icon="res://icon.png"
 
 [autoload]
 
 GDLogger="*res://Autoload/logger.gd"
 CSLogger="*res://Autoload/CSLogger.cs"
-ServerConnection="*res://Networking/ServerConnection.cs"
+Game="*res://Scenes/MainScenes/Game.cs"
 
 [global]
 
 theme=false
+mono=false
+net=false
 
 [input]
 
