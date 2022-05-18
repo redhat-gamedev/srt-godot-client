@@ -8,28 +8,39 @@ using Amqp.Types;
 using ProtoBuf;
 using redhatgamedev.srt;
 
-// NOTE: This is an autoloaded singleton class
 // We use this class to represent a remote connection to the game servers
 public class ServerConnection : Node
 {
     CSLogger cslogger;
+    Game game;
 
     // AMQ Broker connection details
-    String url = "amqp://127.0.0.1:5672";
+    private readonly String commandsQueue = "COMMAND.IN";
+    private readonly String gameEventsTopic = "GAME.EVENT.OUT";
+    String url;
     bool disableCertValidation = true;
-    String commandsQueue = "COMMAND.IN";
-    String gameEventsTopic = "GAME.EVENT.OUT";
     ConnectionFactory factory;
     Connection amqpConnection;
     Session amqpSession;
     SenderLink commandsSender;
     ReceiverLink gameEventsReceiver;
     public static readonly string UUID = System.Guid.NewGuid().ToString();
-    
+
+    // Ugh - seems like we can't seralize protbuf classes via signals so this might not work
+    //[Signal]
+    //public delegate void CreatePlayerGameEvent();
+    //[Signal]
+    //public delegate void CreateMissleGameEvent();
+    //[Signal]
+    //public delegate void UpdatePlayerGameEvent();
+    //[Signal]
+    //public delegate void UpdateMissleGameEvent();
+
     public override void _Ready()
     {
         cslogger = GetNode<CSLogger>("/root/CSLogger");
-        
+        game = GetNode<Game>("/root/Game");
+
         var clientConfig = new ConfigFile();
         Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
         if (err == Godot.Error.Ok)
@@ -44,46 +55,41 @@ public class ServerConnection : Node
         InitializeAMQP();
     }
 
-    public void ConnectToServer()
-    {
-        cslogger.Debug("connecting to server");
-    }
-
-    private void OnConnectSuccess()
-    {
-        // TODO
-        cslogger.Debug("connected to server");
-    }
-    
-    private void OnConnectFailed()
-    {
-        // TODO
-        cslogger.Error("failed to connect server - TBD why");
-    }
-
-    public void RemovePlayer(String UUID)
+    public void RemovePlayerSelf()
     {
         // TODO do we need this anymore? Delete and remove references to it
     }
 
     private void GameEventReceived(IReceiverLink receiver, Message message)
     {
-        cslogger.Verbose("Game Event received!");
-        receiver.Accept(message);
-        byte[] binaryBody = (byte[])message.Body;
-        MemoryStream st = new MemoryStream(binaryBody, false);
-        CommandBuffer commandBuffer;
-        commandBuffer = Serializer.Deserialize<CommandBuffer>(st);
-        EmitSignal("NewGameEvent", commandBuffer);
+        //cslogger.Info("Game Event received!");
+        try
+        {
+            receiver.Accept(message);
+            byte[] binaryBody = (byte[])message.Body;
+            MemoryStream st = new MemoryStream(binaryBody, false);
+            EntityGameEventBuffer egeb;
+            egeb = Serializer.Deserialize<EntityGameEventBuffer>(st);
+
+            this.ProcessGameEvent(egeb); // TODO: move this into it's own class to declutter the networking code
+        }
+        catch (Exception ex)
+        {
+            cslogger.Warn("ServerConnection: Issue deserializing game event.");
+            cslogger.Error(ex.Message);
+            // TODO: if this continues - warn player of connection issues
+            return;
+        }
     }
-    
-    public void SendCommand(CommandBuffer CommandBuffer)
+
+    public void SendCommand(CommandBuffer commandBuffer)
     {
         try
         {
             cslogger.Verbose("ServerConnection: Sending command");
             MemoryStream st = new MemoryStream();
-            Serializer.Serialize<CommandBuffer>(st, CommandBuffer);
+            Serializer.Serialize<CommandBuffer>(st, commandBuffer);
+            //Serializer.SerializeWithLengthPrefix<CommandBuffer>(st, commandBuffer, PrefixStyle.Base128, 123);
             byte[] msgBytes = st.ToArray();
             Message msg = new Message(msgBytes);
             commandsSender.Send(msg, null, null); // don't care about the ack on our message being received
@@ -94,9 +100,10 @@ public class ServerConnection : Node
             cslogger.Error(ex.Message);
             
             // TODO: let player know / return to login screen
+
             return;
         }
-    }    
+    }
 
     async void InitializeAMQP()
     {
@@ -142,9 +149,61 @@ public class ServerConnection : Node
         cslogger.Debug("Finished initializing AMQP connection");
     }
 
-//  // Called every frame. 'delta' is the elapsed time since the previous frame.
-//  public override void _Process(float delta)
-//  {
-//      
-//  }
+    /// <summary>
+    /// Translate Network Protocol Buffer Data into Godot game data.
+    /// Create events should add to scene
+    /// Update events should find/update
+    /// Delete event should remove nodes
+    ///
+    /// TODO: move this into it's own class to declutter the ServerCode
+    /// 
+    /// </summary>
+    /// <param name="egeb"></param>
+    private void ProcessGameEvent(EntityGameEventBuffer egeb)
+    {
+        try
+        {
+            // cslogger will be a ton of log output - only uncomment to debug
+            switch (egeb.Type)
+            {
+                case EntityGameEventBuffer.EntityGameEventBufferType.Create:
+                    cslogger.Info("EntityGameEventBuffer [create]");
+                    PlayerShip newShip = game.CreateShipForUUID(egeb.Uuid);
+                    newShip.UpdateFromGameEventBuffer(egeb);
+                    break;
+                case EntityGameEventBuffer.EntityGameEventBufferType.Destroy:
+                    cslogger.Info("EntityGameEventBuffer [destroy]");
+                    break;
+                case EntityGameEventBuffer.EntityGameEventBufferType.Retrieve:
+                    cslogger.Info("EntityGameEventBuffer [retrieve]");
+                    break;
+                case EntityGameEventBuffer.EntityGameEventBufferType.Update:
+                    //cslogger.Info("EntityGameEventBuffer [update]");
+                    // find/update the Node2D
+                    if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
+                    {
+                        cslogger.Warn("got update event with invalid UUID, IGNORING...");
+                        return;
+                    }
+                    PlayerShip ship = game.UpdateShipWithUUID(egeb.Uuid);
+                    ship.UpdateFromGameEventBuffer(egeb);
+                    break;
+                default:
+                    cslogger.Info("EntityGameEventBuffer type:[?????], IGNORING...");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            cslogger.Error("Issue processing game event:");
+            cslogger.Error(ex.Message);
+            return;
+        }
+    }
+
+    //  // Called every frame. 'delta' is the elapsed time since the previous frame.
+    //  public override void _Process(float delta)
+    //  {
+    //      
+    //  }
 }

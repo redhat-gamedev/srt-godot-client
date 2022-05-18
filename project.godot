@@ -18,7 +18,6 @@ config/icon="res://icon.png"
 
 GDLogger="*res://Autoload/logger.gd"
 CSLogger="*res://Autoload/CSLogger.cs"
-Game="*res://Scenes/MainScenes/Game.cs"
 
 [global]
 
