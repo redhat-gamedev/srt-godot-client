@@ -13,6 +13,7 @@ margin_left = -512.0
 margin_top = -300.0
 margin_right = 512.0
 margin_bottom = 300.0
+mouse_filter = 1
 script = ExtResource( 2 )
 
 [node name="TextureRect" type="TextureRect" parent="."]

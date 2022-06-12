@@ -1,29 +1,20 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workbench ActiveDocument="README.md">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Networking/ServerConnection.cs">
     <Files>
-      <File FileName="Scenes/SupportScenes/PlayerShip.cs" Line="129" Column="1" />
+      <File FileName="Scenes/SupportScenes/PlayerShip.cs" Line="56" Column="1" />
       <File FileName="Autoload/CSLogger.cs" />
-      <File FileName="Networking/Server.cs" />
       <File FileName="Scenes/SupportScenes/SpaceMissile.cs" />
-      <File FileName="README.md" Line="27" Column="1" />
+      <File FileName="README.md" />
+      <File FileName="Networking/proto/box2d.proto" />
+      <File FileName="Networking/proto/SecurityCommandBuffer.cs" />
+      <File FileName="Scenes/MainScenes/Game.cs" />
+      <File FileName="Networking/ServerConnection.cs" Line="132" Column="42" />
+      <File FileName="Networking/proto/RawInputCommandBuffer.cs" />
+      <File FileName="Networking/proto/EntityGameEventBuffer.cs" />
+      <File FileName="Networking/proto/GameEventBuffer.cs" />
+      <File FileName="Networking/proto/box2d.cs" />
+      <File FileName="Resources/client.cfg" />
     </Files>
-    <Pads>
-      <Pad Id="ProjectPad">
-        <State name="__root__">
-          <Option id="ShowAllFiles" value="True" />
-          <Node name="srt-godot-client" expanded="True">
-            <Node name=".DS_Store" selected="True" />
-            <Node name="srt-godot-client" expanded="True">
-              <Node name="Autoload" expanded="True" />
-              <Node name="Networking" expanded="True" />
-              <Node name="Scenes" expanded="True">
-                <Node name="SupportScenes" expanded="True" />
-              </Node>
-            </Node>
-          </Node>
-        </State>
-      </Pad>
-    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />

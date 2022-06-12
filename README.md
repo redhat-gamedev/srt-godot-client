@@ -42,7 +42,7 @@ run `./artemis create gamebroker --user XXXXX --password XXXXX --role admin --na
 It will provide the command to run your newly configured broker
 
 * Option 3. Running in a Kubernetes cluster
-TBD - helm or an operator to launch
+TBD - helm to launch
 
 #### Server
 Find/follow instructions for the [game server here](https://github.com/redhat-gamedev/srt-godot-server).

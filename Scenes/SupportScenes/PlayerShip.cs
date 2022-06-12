@@ -58,6 +58,11 @@ public class PlayerShip : KinematicBody2D
         playerIDLabel.Text = uuid;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="BufferType"></param>
+    /// <returns></returns>
     public EntityGameEventBuffer CreatePlayerGameEventBuffer(EntityGameEventBuffer.EntityGameEventBufferType BufferType)
     {
         EntityGameEventBuffer egeb = new EntityGameEventBuffer();
@@ -83,6 +88,10 @@ public class PlayerShip : KinematicBody2D
         return egeb;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="egeb"></param>
     public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
     {
         this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
@@ -90,8 +99,14 @@ public class PlayerShip : KinematicBody2D
         this.CurrentVelocity = egeb.Body.AbsoluteVelocity;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public void ExpireMissile() { MyMissile = null; }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public void FireMissile()
     {
         // only one missile allowed for now
@@ -132,6 +147,10 @@ public class PlayerShip : KinematicBody2D
         cslogger.Debug("Added missile instance!");
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="Damage"></param>
     public void TakeDamage(int Damage)
     {
         cslogger.Debug($"Player.cs: {uuid}: Taking damage: {Damage}");
@@ -146,6 +165,10 @@ public class PlayerShip : KinematicBody2D
     //  theServer.RemovePlayer(uuid);
     //s}
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="delta"></param>
     public override void _Process(float delta)
     {
         if (HitPoints <= 0)
@@ -156,6 +179,10 @@ public class PlayerShip : KinematicBody2D
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="delta"></param>
     public override void _PhysicsProcess(float delta)
     {
         // somewhat based on: https://kidscancode.org/godot_recipes/2d/topdown_movement/

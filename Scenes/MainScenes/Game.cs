@@ -61,7 +61,7 @@ public class Game : Node
 
         // construct a join message
         SecurityCommandBuffer scb = new SecurityCommandBuffer();
-        scb.Uuid = playerName; //ServerConnection.UUID;
+        scb.Uuid = ServerConnection.UUID;
         scb.Type = SecurityCommandBuffer.SecurityCommandBufferType.Join;
         CommandBuffer cb = new CommandBuffer();
         cb.Type = CommandBuffer.CommandBufferType.Security;
@@ -71,6 +71,8 @@ public class Game : Node
         Label nameLabel = mapOverlay.GetNode<Label>("PlayerNameLabel");
         nameLabel.Text = playerName;
         return true; // TODO: this can't always be true
+
+        // TODO: send my name and player preferences over to the severside
     }
 
     /// <summary>
@@ -142,7 +144,7 @@ public class Game : Node
         cb.rawInputCommandBuffer = ricb;
         serverConnection.SendCommand(cb);
     }
-   
+
     //  // Called every frame. 'delta' is the elapsed time since the previous frame.
     //  public override void _Process(float delta)
     //  {
