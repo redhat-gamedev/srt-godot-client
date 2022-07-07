@@ -63,6 +63,10 @@ zoom_out={
  ]
 }
 
+[mono]
+
+export/include_scripts_content=true
+
 [physics]
 
 common/enable_pause_aware_picking=true
