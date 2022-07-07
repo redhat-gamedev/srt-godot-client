@@ -168,8 +168,15 @@ public class ServerConnection : Node
             {
                 case EntityGameEventBuffer.EntityGameEventBufferType.Create:
                     cslogger.Info("EntityGameEventBuffer [create]");
+
+                    // TODO: could be a missile and not a player, so need to check
+                    // the type and update appropriately
+                    // if egeb is for ship
                     PlayerShip newShip = game.CreateShipForUUID(egeb.Uuid);
                     newShip.UpdateFromGameEventBuffer(egeb);
+
+                    // else if egeb is for missile, do missile stuff
+
                     break;
                 case EntityGameEventBuffer.EntityGameEventBufferType.Destroy:
                     cslogger.Info("EntityGameEventBuffer [destroy]");
@@ -186,6 +193,7 @@ public class ServerConnection : Node
                         return;
                     }
                     PlayerShip ship = game.UpdateShipWithUUID(egeb.Uuid);
+                    //cslogger.Debug($"Got update for {egeb.Uuid}")
                     ship.UpdateFromGameEventBuffer(egeb);
                     break;
                 default:

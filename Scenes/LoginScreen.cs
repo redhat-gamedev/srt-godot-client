@@ -29,7 +29,9 @@ public class LoginScreen : Control
         }
         else 
         {
-            // remove myself
+            // since we successfully joined the game, we can remove this node
+            // which is the login screen. removing the login screen "displays"
+            // the main game window
             QueueFree();
         }
     }

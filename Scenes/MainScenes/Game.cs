@@ -31,7 +31,7 @@ public class Game : Node
         this.AddChild(serverConnection);
 
         PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
-        loginScreen = packedLoginScene.Instance<LoginScreen>(PackedScene.GenEditState.Instance);
+        loginScreen = (LoginScreen) packedLoginScene.Instance();
         loginScreen.Visible = false;
         this.AddChild(loginScreen);
         loginScreen.Visible = true;
@@ -42,6 +42,24 @@ public class Game : Node
 
     public override void _Process(float delta)
     {
+        // make sure our player's camera is current
+        if (playerObjects.ContainsKey(ServerConnection.UUID)) 
+        { 
+          Node2D playerForCamera = playerObjects[ServerConnection.UUID];
+          Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
+          
+          // it's possible the playerobject entry exists but the player hasn't
+          // been added to the scene yet
+          if (!(playerCamera == null))
+          { 
+            // if it's not null, then we can make it current
+            if (!playerCamera.Current) { playerCamera.MakeCurrent(); } 
+
+            // set its position to the player's position
+            //playerCamera.Position = playerForCamera.Position;
+          }
+        }
+
         var velocity = Vector2.Zero; // The player's movement direction.
         var shoot = Vector2.Zero; // the player's shoot status
         if (Input.IsActionPressed("rotate_right")) velocity.x += 1;
@@ -91,8 +109,16 @@ public class Game : Node
         Node2D playerShipThingInstance = (Node2D)playerShipThing.Instance();
         PlayerShip shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
         shipInstance.uuid = uuid;
-        canvasLayer.AddChild(playerShipThingInstance);
+        
+        //canvasLayer.AddChild(playerShipThingInstance);
+        AddChild(playerShipThingInstance);
+        cslogger.Debug("Adding ship to scene tree");
+
+        // TODO: this is inconsistent with the way the server uses the playerObjects array
+        // where the server is using the ShipThing, this is using the PlayerShip. It may 
+        // or may not be significant down the line
         playerObjects.Add(uuid, shipInstance);
+
         return shipInstance;
     }
 
