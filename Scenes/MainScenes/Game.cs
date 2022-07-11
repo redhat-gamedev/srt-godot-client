@@ -17,6 +17,8 @@ public class Game : Node
   Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip;
 
+  public String myUuid = null;
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
@@ -43,20 +45,23 @@ public class Game : Node
   public override void _Process(float delta)
   {
     // make sure our player's camera is current
-    if (playerObjects.ContainsKey(ServerConnection.UUID))
+    if (myUuid != null)
     {
-      Node2D playerForCamera = playerObjects[ServerConnection.UUID];
-      Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
-
-      // it's possible the playerobject entry exists but the player hasn't
-      // been added to the scene yet
-      if (!(playerCamera == null))
+      if (playerObjects.ContainsKey(myUuid))
       {
-        // if it's not null, then we can make it current
-        if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+        Node2D playerForCamera = playerObjects[myUuid];
+        Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
 
-        // set its position to the player's position
-        //playerCamera.Position = playerForCamera.Position;
+        // it's possible the playerobject entry exists but the player hasn't
+        // been added to the scene yet
+        if (!(playerCamera == null))
+        {
+          // if it's not null, then we can make it current
+          if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+
+          // set its position to the player's position
+          //playerCamera.Position = playerForCamera.Position;
+        }
       }
     }
 
@@ -75,11 +80,14 @@ public class Game : Node
   public bool JoinGameAsPlayer(string playerName)
   {
     // TODO: if not connected, try again to connect to server
-    cslogger.Debug($"Game.cs: Sending join with UUID: {ServerConnection.UUID}, named: {playerName}");
+    cslogger.Debug($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
 
     // construct a join message
     SecurityCommandBuffer scb = new SecurityCommandBuffer();
-    scb.Uuid = ServerConnection.UUID;
+
+    //scb.Uuid = ServerConnection.UUID;
+    scb.Uuid = playerName;
+
     scb.Type = SecurityCommandBuffer.SecurityCommandBufferType.Join;
     CommandBuffer cb = new CommandBuffer();
     cb.Type = CommandBuffer.CommandBufferType.Security;
@@ -192,7 +200,7 @@ public class Game : Node
     // see if we know about the missile by checking the missileObjects array
     // if we don't, do nothing, since there's nothing displayed yet to remove
     if (missileObjects.TryGetValue(uuid, out missileInstance))
-    { 
+    {
       missileInstance.Expire();
       missileObjects.Remove(uuid);
     }
@@ -206,7 +214,7 @@ public class Game : Node
 
     RawInputCommandBuffer ricb = new RawInputCommandBuffer();
     ricb.Type = RawInputCommandBuffer.RawInputCommandBufferType.Dualstick;
-    ricb.Uuid = ServerConnection.UUID;
+    ricb.Uuid = myUuid;
 
     DualStickRawInputCommandBuffer dsricb = new DualStickRawInputCommandBuffer();
     if ((velocity.Length() > 0) || (shoot.Length() > 0))  // what's up with this code? no brackets.

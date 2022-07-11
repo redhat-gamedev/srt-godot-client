@@ -29,6 +29,7 @@ public class LoginScreen : Control
         }
         else 
         {
+            game.myUuid = textField.Text;
             // since we successfully joined the game, we can remove this node
             // which is the login screen. removing the login screen "displays"
             // the main game window
