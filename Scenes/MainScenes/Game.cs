@@ -150,7 +150,10 @@ public class Game : Node
 
     cslogger.Debug("Adding missile to scene tree");
     AddChild(missileInstance);
-
+    // Run the missile animation
+    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("LaunchSequence");
+    missileFiringAnimation.Frame = 0;
+    missileFiringAnimation.Play("default");
     return missileInstance;
   }
 
