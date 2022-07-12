@@ -191,6 +191,7 @@ public class ServerConnection : Node
           {
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
               cslogger.Info("Should be destroying a ship now");
+              game.DestroyShipWithUUID(egeb.Uuid);
               break;
 
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:

@@ -207,6 +207,21 @@ public class Game : Node
     return missileInstance;
   }
 
+  /// <summary>Called when a ship destroy message is received</summary>
+  /// <param name="uuid"></param>
+  /// <returns>nothing</returns>
+  public void DestroyShipWithUUID(string uuid)
+  {
+    PlayerShip shipInstance;
+
+    // see if we know about the missile by checking the missileObjects array
+    // if we don't, do nothing, since there's nothing displayed yet to remove
+    if (playerObjects.TryGetValue(uuid, out shipInstance))
+    {
+      playerObjects.Remove(uuid);
+      shipInstance.QueueFree();
+    }
+  }
   /// <summary>Called when a missile destroy message is received</summary>
   /// <param name="uuid"></param>
   /// <returns>nothing</returns>
