@@ -101,6 +101,18 @@ public class Game : Node
     // TODO: send my name and player preferences over to the severside
   }
 
+  void QuitGame()
+  {
+    // our UUID was set, so we should send a leave message to be polite
+    SecurityCommandBuffer scb = new SecurityCommandBuffer();
+    scb.Uuid = myUuid;
+    scb.Type = SecurityCommandBuffer.SecurityCommandBufferType.Leave;
+    CommandBuffer cb = new CommandBuffer();
+    cb.Type = CommandBuffer.CommandBufferType.Security;
+    cb.securityCommandBuffer = scb;
+    serverConnection.SendCommand(cb);
+  }
+
   /// <summary>
   /// Called when the network processes a game event with a create ship event
   ///
@@ -243,6 +255,19 @@ public class Game : Node
     ricb.dualStickRawInputCommandBuffer = dsricb;
     cb.rawInputCommandBuffer = ricb;
     serverConnection.SendCommand(cb);
+  }
+
+  public override void _Notification(int what)
+  {
+      if (what == MainLoop.NotificationWmQuitRequest)
+      {
+        cslogger.Info("ServerConnection.cs: Got quit notification");
+        // check if our UUID is set. If it isn't, we don't have to send a leave
+        // message, so we can just return
+        if (myUuid == null) return;
+        QuitGame();
+      }
+          //GetTree().Quit(); // default behavior
   }
 
   //  // Called every frame. 'delta' is the elapsed time since the previous frame.
