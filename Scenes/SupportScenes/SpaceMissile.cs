@@ -16,6 +16,9 @@ public class SpaceMissile : Area2D
 
   public String uuid;
 
+  AnimatedSprite missileAnimation;
+  AnimatedSprite missileExplosion;
+
   [Signal]
   public delegate void Hit(PlayerShip HitPlayer);
 
@@ -31,7 +34,13 @@ public class SpaceMissile : Area2D
 
     public void Expire()
     {
-      QueueFree();
+      // stop the regular animation and play the explosion animation
+      cslogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
+      GetNode<Sprite>("Sprite").Hide();
+      GetNode<AnimatedSprite>("Animations").Hide();
+      missileAnimation.Stop();
+      missileAnimation.Frame = 0;
+      missileExplosion.Play();
     }
 
   // Called when the node enters the scene tree for the first time.
@@ -41,6 +50,25 @@ public class SpaceMissile : Area2D
 
     // connect the hit signal to handling the hit
     //Connect(nameof(Hit), this, "_HandleHit");
+
+    missileAnimation = GetNode<AnimatedSprite>("Animations");
+    missileExplosion = GetNode<AnimatedSprite>("Explosion");
+  }
+
+  public override void _Process(float delta)
+  {
+    if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30) 
+    {
+      missileAnimation.Frame = 0;
+      missileAnimation.Play("travel");
+    }
+  }
+
+  void _on_Explosion_animation_finished()
+  {
+    cslogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
+    // when the explosion animation finishes, remove the missile from the scene
+    QueueFree();
   }
 
   //public override void _PhysicsProcess(float delta)
