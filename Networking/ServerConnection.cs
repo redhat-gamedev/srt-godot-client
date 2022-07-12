@@ -178,7 +178,7 @@ public class ServerConnection : Node
 
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
               cslogger.Info("Got create for a missile");
-              SpaceMissile newMissile = game.CreateMissileForUUID(egeb.Uuid, egeb.ownerUUID);
+              SpaceMissile newMissile = game.CreateMissileForUUID(egeb);
               newMissile.UpdateFromGameEventBuffer(egeb);
               break;
           }
@@ -221,7 +221,7 @@ public class ServerConnection : Node
               break;
 
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
-              SpaceMissile missile = game.UpdateMissileWithUUID(egeb.Uuid, egeb.ownerUUID);
+              SpaceMissile missile = game.UpdateMissileWithUUID(egeb);
               missile.UpdateFromGameEventBuffer(egeb);
               break;
           }

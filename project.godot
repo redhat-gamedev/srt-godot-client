@@ -19,6 +19,11 @@ config/icon="res://icon.png"
 GDLogger="*res://Autoload/logger.gd"
 CSLogger="*res://Autoload/CSLogger.cs"
 
+[display]
+
+window/size/width=1280
+window/size/height=1024
+
 [global]
 
 theme=false

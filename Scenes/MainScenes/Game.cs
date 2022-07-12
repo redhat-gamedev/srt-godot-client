@@ -135,25 +135,27 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the created missile instance</returns>
-  public SpaceMissile CreateMissileForUUID(string uuid, string ownerUuid)
+  public SpaceMissile CreateMissileForUUID(EntityGameEventBuffer egeb)
   {
     PackedScene packedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
     SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instance();
 
     // set the missile's UUID to the message's UUID
-    missileInstance.uuid = uuid;
+    missileInstance.uuid = egeb.Uuid;
 
     // missiles have owners, so find the right player (hopefully)
-    missileInstance.MyPlayer = playerObjects[ownerUuid];
+    missileInstance.MyPlayer = playerObjects[egeb.ownerUUID];
 
-    missileObjects.Add(uuid, missileInstance);
-
+    missileObjects.Add(egeb.Uuid, missileInstance);
+    missileInstance.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
+    missileInstance.RotationDegrees = egeb.Body.Angle;
     cslogger.Debug("Adding missile to scene tree");
     AddChild(missileInstance);
+
     // Run the missile animation
-    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("LaunchSequence");
+    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
     missileFiringAnimation.Frame = 0;
-    missileFiringAnimation.Play("default");
+    missileFiringAnimation.Play("launch");
     return missileInstance;
   }
 
@@ -180,14 +182,14 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the missile instance</returns>
-  public SpaceMissile UpdateMissileWithUUID(string uuid, string ownerUuid)
+  public SpaceMissile UpdateMissileWithUUID(EntityGameEventBuffer egeb)
   {
     SpaceMissile missileInstance;
-    if (!missileObjects.TryGetValue(uuid, out missileInstance))
+    if (!missileObjects.TryGetValue(egeb.Uuid, out missileInstance))
     {
       // the missile existed before we started, so we didn't get the create event
-      cslogger.Debug($"UpdateMissileWithUUID: missile doesn't exist, creating {uuid} with owner {ownerUuid}");
-      missileInstance = this.CreateMissileForUUID(uuid, ownerUuid);
+      cslogger.Debug($"UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.ownerUUID}");
+      missileInstance = this.CreateMissileForUUID(egeb);
     }
 
     return missileInstance;
