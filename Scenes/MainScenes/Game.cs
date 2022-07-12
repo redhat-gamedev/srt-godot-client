@@ -219,7 +219,8 @@ public class Game : Node
     if (playerObjects.TryGetValue(uuid, out shipInstance))
     {
       playerObjects.Remove(uuid);
-      shipInstance.QueueFree();
+      // need to free the parent of the ship, which is the "shipthing"
+      shipInstance.GetParent().QueueFree();
     }
   }
   /// <summary>Called when a missile destroy message is received</summary>
