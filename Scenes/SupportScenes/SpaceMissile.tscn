@@ -117,5 +117,5 @@ animation = "travel"
 scale = Vector2( 0.1, 0.1 )
 frames = SubResource( 3 )
 
-[connection signal="body_entered" from="." to="." method="_onSpaceMissileBodyEntered"]
+;[connection signal="body_entered" from="." to="." method="_onSpaceMissileBodyEntered"]
 [connection signal="animation_finished" from="Explosion" to="." method="_on_Explosion_animation_finished"]
