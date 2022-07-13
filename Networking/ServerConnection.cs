@@ -1,6 +1,5 @@
 using Godot;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Amqp;
 using Amqp.Framing;
@@ -45,11 +44,11 @@ public class ServerConnection : Node
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
     if (err == Godot.Error.Ok)
     {
-      cslogger.Info("Successfully loaded the AMQ config from 'res://Resources/client.cfg'");
+      cslogger.Info("ServerConnection.cs: Successfully loaded the AMQ config from 'res://Resources/client.cfg'");
       url = (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
-      cslogger.Verbose("config file: setting url to " + url);
+      cslogger.Verbose("ServerConnection.cs: config file: setting url to " + url);
       disableCertValidation = (bool)clientConfig.GetValue("amqp", "disable_cert_validation", true);
-      cslogger.Verbose("config file: setting cert validation to " + disableCertValidation);
+      cslogger.Verbose("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
     }
 
     InitializeAMQP();
@@ -62,7 +61,7 @@ public class ServerConnection : Node
 
   private void GameEventReceived(IReceiverLink receiver, Message message)
   {
-    //cslogger.Info("Game Event received!");
+    cslogger.Verbose("Game Event received!");
     try
     {
       receiver.Accept(message);
@@ -75,8 +74,8 @@ public class ServerConnection : Node
     }
     catch (Exception ex)
     {
-      cslogger.Warn("ServerConnection: Issue deserializing game event.");
-      cslogger.Error(ex.Message);
+      cslogger.Warn("ServerConnection.cs: Issue deserializing game event.");
+      cslogger.Error($"ServerConnection.cs: {ex.Message}");
       // TODO: if this continues - warn player of connection issues
       return;
     }
@@ -86,7 +85,7 @@ public class ServerConnection : Node
   {
     try
     {
-      cslogger.Verbose("ServerConnection: Sending command");
+      cslogger.Verbose("ServerConnection.cs: Sending command");
       MemoryStream st = new MemoryStream();
       Serializer.Serialize<CommandBuffer>(st, commandBuffer);
       //Serializer.SerializeWithLengthPrefix<CommandBuffer>(st, commandBuffer, PrefixStyle.Base128, 123);
@@ -96,7 +95,7 @@ public class ServerConnection : Node
     }
     catch (Exception ex)
     {
-      cslogger.Error("ServerConnection: Send Command failed.");
+      cslogger.Error("ServerConnection.cs: Send Command failed.");
       cslogger.Error(ex.Message);
 
       // TODO: let player know / return to login screen
@@ -107,28 +106,28 @@ public class ServerConnection : Node
 
   async void InitializeAMQP()
   {
-    cslogger.Debug("Initializing AMQP connection");
+    cslogger.Debug("ServerConnection.cs: Initializing AMQP connection");
     Connection.DisableServerCertValidation = disableCertValidation;
     try
     {
       //Trace.TraceLevel = TraceLevel.Frame;
       //Trace.TraceListener = (l, f, a) => Console.WriteLine(DateTime.Now.ToString("[hh:mm:ss.fff]") + " " + string.Format(f, a));
       factory = new ConnectionFactory();
-      cslogger.Debug("connecting to " + url);
+      cslogger.Debug("ServerConnection.cs: connecting to " + url);
       Address address = new Address(url);
       amqpConnection = await factory.CreateAsync(address);
       amqpSession = new Session(amqpConnection);
     }
     catch (Exception ex)
     {
-      cslogger.Error("AMQP connection/session failed for " + url);
-      cslogger.Error(ex.Message);
+      cslogger.Error("ServerConnection.cs: AMQP connection/session failed for " + url);
+      cslogger.Error($"ServerConnection.cs: {ex.Message}");
       // TODO: let player know
       return;
     }
 
     var linkid = "srt-game-client-receiver-" + UUID;
-    cslogger.Debug("Creating AMQ receiver for game events: " + linkid);
+    cslogger.Debug("ServerConnection.cs: Creating AMQ receiver for game events: " + linkid);
     Source eventInSource = new Source
     {
       Address = gameEventsTopic,
@@ -138,7 +137,7 @@ public class ServerConnection : Node
     gameEventsReceiver.Start(10, GameEventReceived);
 
     linkid = "srt-game-client-command-sender-" + UUID;
-    cslogger.Debug("Creating AMQ sender for player commands: " + linkid);
+    cslogger.Debug("ServerConnection.cs: Creating AMQ sender for player commands: " + linkid);
     Target commandOutTarget = new Target
     {
       Address = commandsQueue,
@@ -146,7 +145,7 @@ public class ServerConnection : Node
     };
     commandsSender = new SenderLink(amqpSession, linkid, commandOutTarget, null);
 
-    cslogger.Debug("Finished initializing AMQP connection");
+    cslogger.Debug("ServerConnection.cs: Finished initializing AMQP connection");
   }
 
   /// <summary>
@@ -167,17 +166,17 @@ public class ServerConnection : Node
       switch (egeb.Type)
       {
         case EntityGameEventBuffer.EntityGameEventBufferType.Create:
-          cslogger.Info("EntityGameEventBuffer [create]");
+          cslogger.Info("ServerConnection.cs: EntityGameEventBuffer [create]");
           switch (egeb.objectType)
           {
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
-              cslogger.Info("Got create for a ship");
+              cslogger.Info("ServerConnection.cs: Got create for a ship");
               PlayerShip newShip = game.CreateShipForUUID(egeb.Uuid);
               newShip.UpdateFromGameEventBuffer(egeb);
               break;
 
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
-              cslogger.Info("Got create for a missile");
+              cslogger.Info("ServerConnection.cs: Got create for a missile");
               SpaceMissile newMissile = game.CreateMissileForUUID(egeb);
               newMissile.UpdateFromGameEventBuffer(egeb);
               break;
@@ -185,17 +184,17 @@ public class ServerConnection : Node
           break;
 
         case EntityGameEventBuffer.EntityGameEventBufferType.Destroy:
-          cslogger.Info("EntityGameEventBuffer [destroy]");
+          cslogger.Info("ServerConnection.cs: EntityGameEventBuffer [destroy]");
 
           switch (egeb.objectType)
           {
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
-              cslogger.Info("Should be destroying a ship now");
+              cslogger.Info($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
               game.DestroyShipWithUUID(egeb.Uuid);
               break;
 
             case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
-              cslogger.Info($"Destroying SpaceMissile {egeb.Uuid}");
+              cslogger.Info($"ServerConnection.cs: Got destroy for missile {egeb.Uuid}");
               game.DestroyMissileWithUUID(egeb.Uuid);
               break;
 
@@ -203,14 +202,14 @@ public class ServerConnection : Node
           break;
 
         case EntityGameEventBuffer.EntityGameEventBufferType.Retrieve:
-          cslogger.Info("EntityGameEventBuffer [retrieve]");
+          cslogger.Info("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
           break;
 
         case EntityGameEventBuffer.EntityGameEventBufferType.Update:
           // find/update the Node2D
           if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
           {
-            cslogger.Warn("got update event with invalid UUID, IGNORING...");
+            cslogger.Warn("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
             return;
           }
 
@@ -229,13 +228,13 @@ public class ServerConnection : Node
           break;
 
         default:
-          cslogger.Info("EntityGameEventBuffer type:[?????], IGNORING...");
+          cslogger.Info("ServerConnection.cs: EntityGameEventBuffer type:[?????], IGNORING...");
           break;
       }
     }
     catch (Exception ex)
     {
-      cslogger.Error("Issue processing game event:");
+      cslogger.Error("ServerConnection.cs: Issue processing game event:");
       cslogger.Error(ex.Message);
       return;
     }
