@@ -149,6 +149,12 @@ public class Game : Node
   /// <returns>the created missile instance</returns>
   public SpaceMissile CreateMissileForUUID(EntityGameEventBuffer egeb)
   {
+    // we might have accidentally gotten a create after an update, so first
+    // check if a key already exists for the uuid
+    SpaceMissile existingMissile;
+    if (missileObjects.TryGetValue(egeb.Uuid, out existingMissile)) { return existingMissile; }
+
+    // set up the new missile
     PackedScene packedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
     SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instance();
 
@@ -161,10 +167,14 @@ public class Game : Node
     missileObjects.Add(egeb.Uuid, missileInstance);
     missileInstance.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
     missileInstance.RotationDegrees = egeb.Body.Angle;
-    cslogger.Debug("Adding missile to scene tree");
+    cslogger.Debug("Game.cs: Adding missile to scene tree");
     AddChild(missileInstance);
 
+    // just in case we need to use it later
+    missileInstance.AddToGroup("missiles");
+
     // Run the missile animation
+    cslogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
     AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
     missileFiringAnimation.Frame = 0;
     missileFiringAnimation.Play("launch");
@@ -183,7 +193,7 @@ public class Game : Node
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
       // must've joined before us - so we didn't get the create event, create it
-      cslogger.Debug("UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
+      cslogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
       shipInstance = this.CreateShipForUUID(uuid);
     }
     return shipInstance;
@@ -200,7 +210,7 @@ public class Game : Node
     if (!missileObjects.TryGetValue(egeb.Uuid, out missileInstance))
     {
       // the missile existed before we started, so we didn't get the create event
-      cslogger.Debug($"UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.ownerUUID}");
+      cslogger.Debug($"Game.cs: UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.ownerUUID}");
       missileInstance = this.CreateMissileForUUID(egeb);
     }
 
@@ -214,8 +224,7 @@ public class Game : Node
   {
     PlayerShip shipInstance;
 
-    // see if we know about the missile by checking the missileObjects array
-    // if we don't, do nothing, since there's nothing displayed yet to remove
+    // if we don't find anything, do nothing, since there's nothing displayed yet to remove
     if (playerObjects.TryGetValue(uuid, out shipInstance))
     {
       playerObjects.Remove(uuid);
@@ -250,40 +259,44 @@ public class Game : Node
     ricb.Uuid = myUuid;
 
     DualStickRawInputCommandBuffer dsricb = new DualStickRawInputCommandBuffer();
-    if ((velocity.Length() > 0) || (shoot.Length() > 0))  // what's up with this code? no brackets.
-
+    if ((velocity.Length() > 0) || (shoot.Length() > 0))
+    {
       if (velocity.Length() > 0)
       {
+        cslogger.Debug("Game.cs: Got move command");
         Box2d.PbVec2 b2dMove = new Box2d.PbVec2();
         b2dMove.X = velocity.x;
         b2dMove.Y = velocity.y;
         dsricb.pbv2Move = b2dMove;
       }
 
-    if (shoot.Length() > 0)
-    {
-      // TODO: make this actually depend on ship direction
-      Box2d.PbVec2 b2dShoot = new Box2d.PbVec2();
-      b2dShoot.Y = 1;
-      dsricb.pbv2Shoot = b2dShoot;
+      if (shoot.Length() > 0)
+      {
+        cslogger.Debug("Game.cs: Got shoot command");
+        // TODO: make this actually depend on ship direction
+        Box2d.PbVec2 b2dShoot = new Box2d.PbVec2();
+        b2dShoot.Y = 1;
+        dsricb.pbv2Shoot = b2dShoot;
+      }
+
+      ricb.dualStickRawInputCommandBuffer = dsricb;
+      cb.rawInputCommandBuffer = ricb;
+      serverConnection.SendCommand(cb);
     }
 
-    ricb.dualStickRawInputCommandBuffer = dsricb;
-    cb.rawInputCommandBuffer = ricb;
-    serverConnection.SendCommand(cb);
   }
 
   public override void _Notification(int what)
   {
-      if (what == MainLoop.NotificationWmQuitRequest)
-      {
-        cslogger.Info("ServerConnection.cs: Got quit notification");
-        // check if our UUID is set. If it isn't, we don't have to send a leave
-        // message, so we can just return
-        if (myUuid == null) return;
-        QuitGame();
-      }
-          //GetTree().Quit(); // default behavior
+    if (what == MainLoop.NotificationWmQuitRequest)
+    {
+      cslogger.Info("Game.cs: Got quit notification");
+      // check if our UUID is set. If it isn't, we don't have to send a leave
+      // message, so we can just return
+      if (myUuid == null) return;
+      QuitGame();
+    }
+    //GetTree().Quit(); // default behavior
   }
 
   //  // Called every frame. 'delta' is the elapsed time since the previous frame.

@@ -22,30 +22,31 @@ public class SpaceMissile : Area2D
   [Signal]
   public delegate void Hit(PlayerShip HitPlayer);
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="egeb"></param>
-    public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
-    {
-        this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
-        this.RotationDegrees = egeb.Body.Angle;
-    }
+  /// <summary>
+  /// 
+  /// </summary>
+  /// <param name="egeb"></param>
+  public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
+  {
+    cslogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
+    this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
+    this.RotationDegrees = egeb.Body.Angle;
+  }
 
-    public void Expire()
-    {
-      // stop the regular animation and play the explosion animation
-      cslogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
-      GetNode<Sprite>("Sprite").Hide();
-      GetNode<AnimatedSprite>("Animations").Hide();
-      missileAnimation.Stop();
-      missileAnimation.Frame = 0;
-      missileExplosion.Play();
-    }
+  public void Expire()
+  {
+    // stop the regular animation and play the explosion animation
+    cslogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
+    GetNode<Sprite>("Sprite").Hide();
+    GetNode<AnimatedSprite>("Animations").Hide();
+    missileAnimation.Stop();
+    missileAnimation.Frame = 0;
+    missileExplosion.Play();
+  }
 
   // Called when the node enters the scene tree for the first time.
-  public override void _Ready() 
-  {  
+  public override void _Ready()
+  {
     cslogger = GetNode<CSLogger>("/root/CSLogger");
 
     // connect the hit signal to handling the hit
@@ -57,7 +58,7 @@ public class SpaceMissile : Area2D
 
   public override void _Process(float delta)
   {
-    if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30) 
+    if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
     {
       missileAnimation.Frame = 0;
       missileAnimation.Play("travel");
