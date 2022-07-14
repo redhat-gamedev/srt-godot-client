@@ -42,6 +42,8 @@ public class SpaceMissile : Area2D
     missileAnimation.Stop();
     missileAnimation.Frame = 0;
     missileExplosion.Play();
+
+    if (MyPlayer != null) MyPlayer.MyMissile = null;
   }
 
   // Called when the node enters the scene tree for the first time.
