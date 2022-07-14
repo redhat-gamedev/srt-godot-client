@@ -40,8 +40,10 @@ public class PlayerShip : KinematicBody2D
 
   public String uuid;
   CSLogger cslogger;
-  public Queue MovementQueue = new Queue();
-  SpaceMissile MyMissile = null; // for now only one missile at a time
+  //public Queue MovementQueue = new Queue();
+  public SpaceMissile MyMissile = null; // for now only one missile at a time
+
+  Node2D shipThing;
 
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
@@ -51,11 +53,11 @@ public class PlayerShip : KinematicBody2D
     // initialize the logging configuration
     cslogger = GetNode<CSLogger>("/root/CSLogger");
 
-    Node2D shipThing = (Node2D)GetParent();
-    Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
+    shipThing = (Node2D)GetParent();
+    //Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
-    // TODO: deal with really long UUIDs
-    playerIDLabel.Text = uuid;
+    //// TODO: deal with really long UUIDs
+    //playerIDLabel.Text = uuid;
   }
 
   /// <summary>
@@ -171,26 +173,26 @@ public class PlayerShip : KinematicBody2D
   /// <param name="delta"></param>
   public override void _Process(float delta)
   {
-    if (HitPoints <= 0)
-    {
-      cslogger.Debug("Hitpoints zeroed! Remove the player!");
-      //RemovePlayer();
-      // TODO: you're dead - should this come from server of processed here?
-    }
+    //if (HitPoints <= 0)
+    //{
+    //  cslogger.Debug("Hitpoints zeroed! Remove the player!");
+    //  //RemovePlayer();
+    //  // TODO: you're dead - should this come from server of processed here?
+    //}
 
-    Node2D shipThing = (Node2D)GetParent();
+    //Node2D shipThing = (Node2D)GetParent();
 
-    // TODO: we are doing instant rotation so probably should rename this
-    Label angularVelocityLabel = (Label)shipThing.GetNode("Stat/AngularVelocity");
-    Label linearVelocityLabel = (Label)shipThing.GetNode("Stat/LinearVelocity");
-    Label hitPointsLabel = (Label)shipThing.GetNode("Stat/HitPoints");
-    Label positionLabel = (Label)shipThing.GetNode("Stat/Position");
-    Label hexLabel = (Label)shipThing.GetNode("Stat/Hex");
+    //// TODO: we are doing instant rotation so probably should rename this
+    //Label angularVelocityLabel = (Label)shipThing.GetNode("Stat/AngularVelocity");
+    //Label linearVelocityLabel = (Label)shipThing.GetNode("Stat/LinearVelocity");
+    //Label hitPointsLabel = (Label)shipThing.GetNode("Stat/HitPoints");
+    //Label positionLabel = (Label)shipThing.GetNode("Stat/Position");
+    //Label hexLabel = (Label)shipThing.GetNode("Stat/Hex");
 
-    angularVelocityLabel.Text = $"Rot: {RotationDegrees}";
-    linearVelocityLabel.Text = $"Vel: {CurrentVelocity}";
-    hitPointsLabel.Text = $"HP: {HitPoints}";
-    positionLabel.Text = $"X: {GlobalPosition.x} Y: {GlobalPosition.y}";
+    //angularVelocityLabel.Text = $"Rot: {RotationDegrees}";
+    //linearVelocityLabel.Text = $"Vel: {CurrentVelocity}";
+    //hitPointsLabel.Text = $"HP: {HitPoints}";
+    //positionLabel.Text = $"X: {GlobalPosition.x} Y: {GlobalPosition.y}";
   }
 
 }

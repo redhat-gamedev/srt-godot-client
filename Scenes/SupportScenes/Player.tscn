@@ -6,6 +6,7 @@
 [node name="ShipThings" type="Node2D"]
 
 [node name="Stat" type="Node2D" parent="."]
+visible = false
 
 [node name="IDLabel" type="Label" parent="Stat"]
 margin_left = -35.0
@@ -15,9 +16,6 @@ margin_bottom = 42.0
 grow_horizontal = 2
 text = "UUIDUUID"
 align = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="LinearVelocity" type="Label" parent="Stat"]
 margin_left = -33.0

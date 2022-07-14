@@ -8,14 +8,22 @@ public class Game : Node
 {
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
-  private CanvasLayer canvasLayer;
-  private Control mapOverlay;
+
+  // UI elements
+  CanvasLayer gameUI;
+  TextureRect speedometer;
+  TextureRect missileDisplay;
+  TextureRect missileReadyIndicator;
+  Texture missileReadyIndicatorReady;
+  Texture missileReadyIndicatorNotReady;
+  Texture missileReadyIndicatorDefault;
+
   CSLogger cslogger;
 
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
   Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
   Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
-  PlayerShip myShip;
+  PlayerShip myShip = null;
 
   public String myUuid = null;
 
@@ -25,9 +33,9 @@ public class Game : Node
     cslogger = GetNode<CSLogger>("/root/CSLogger");
     cslogger.Info("Space Ring Things (SRT) Game Client v???");
 
-    canvasLayer = GetNode<CanvasLayer>("MapCanvasLayer");
-    if (canvasLayer != null) mapOverlay = canvasLayer.GetNode<Control>("MapOverlay");
-    else cslogger.Error("WTF - map canvas layer");
+    //canvasLayer = GetNode<CanvasLayer>("MapCanvasLayer");
+    //if (canvasLayer != null) mapOverlay = canvasLayer.GetNode<Control>("MapOverlay");
+    //else cslogger.Error("WTF - map canvas layer");
 
     serverConnection = new ServerConnection();
     this.AddChild(serverConnection);
@@ -42,31 +50,42 @@ public class Game : Node
     // if lots of fails, pop up an error screen (and let player do server config?)
   }
 
+  public void initializeGameUI() 
+  {
+    // load the textures for the missile statuses
+    missileReadyIndicatorDefault = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
+    missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
+    missileReadyIndicatorReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
+
+    // TODO: should we be adding the GUI to the scene instead of displaying its elements?
+    // find the HUD to show its elements
+    gameUI = GetNode<CanvasLayer>("GUI");
+    speedometer = gameUI.GetNode<TextureRect>("Speedometer");
+    speedometer.Show();
+
+    missileDisplay = gameUI.GetNode<TextureRect>("Missile");
+    missileDisplay.Show();
+
+    missileReadyIndicator = gameUI.GetNode<TextureRect>("Missile/MissileReadyIndicator");
+  }
+
+  void updateGameUI()
+  {
+    // update the speedometer for our player
+    speedometer.GetNode<Label>("SpeedLabel").Text = myShip.CurrentVelocity.ToString("n2");
+
+    // if we have a missile, set the indicator to red, otherwise set the indicator to green
+    if (myShip.MyMissile != null) missileReadyIndicator.Texture = missileReadyIndicatorNotReady;
+    else missileReadyIndicator.Texture = missileReadyIndicatorReady;
+  }
+
   public override void _Process(float delta)
   {
-    // make sure our player's camera is current
-    if (myUuid != null)
-    {
-      if (playerObjects.ContainsKey(myUuid))
-      {
-        Node2D playerForCamera = playerObjects[myUuid];
-        Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
-
-        // it's possible the playerobject entry exists but the player hasn't
-        // been added to the scene yet
-        if (!(playerCamera == null))
-        {
-          // if it's not null, then we can make it current
-          if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
-
-          // set its position to the player's position
-          //playerCamera.Position = playerForCamera.Position;
-        }
-      }
-    }
 
     var velocity = Vector2.Zero; // The player's movement direction.
     var shoot = Vector2.Zero; // the player's shoot status
+
+    // check for inputs
     if (Input.IsActionPressed("rotate_right")) velocity.x += 1;
     if (Input.IsActionPressed("rotate_left")) velocity.x -= 1;
     if (Input.IsActionPressed("thrust_forward")) velocity.y += 1;
@@ -74,7 +93,8 @@ public class Game : Node
     if (Input.IsActionPressed("fire")) shoot.y = 1;
     if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
 
-    // TODO ? maybe handle server telling us of new players
+    if (myShip != null) updateGameUI();
+
   }
 
   public bool JoinGameAsPlayer(string playerName)
@@ -94,8 +114,6 @@ public class Game : Node
     cb.securityCommandBuffer = scb;
     serverConnection.SendCommand(cb);
 
-    Label nameLabel = mapOverlay.GetNode<Label>("PlayerNameLabel");
-    nameLabel.Text = playerName;
     return true; // TODO: this can't always be true
 
     // TODO: send my name and player preferences over to the severside
@@ -123,8 +141,6 @@ public class Game : Node
   {
     cslogger.Debug("CreateShipForUUID: " + uuid);
     // TODO: check to ensure it doesn't already exist
-    // TODO: check if it's my ship
-
     PackedScene playerShipThing = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/Player.tscn");
     Node2D playerShipThingInstance = (Node2D)playerShipThing.Instance();
     PlayerShip shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
@@ -137,6 +153,18 @@ public class Game : Node
     // where the server is using the ShipThing, this is using the PlayerShip. It may 
     // or may not be significant down the line
     playerObjects.Add(uuid, shipInstance);
+
+    // check if our UUID is set -- would be set after join, but it's possible
+    // we are receiving messages and creates, etc. before we have joined
+    if (myUuid != null)
+    {
+      // the ship we just added is myship
+      myShip = shipInstance;
+      Node2D playerForCamera = playerObjects[myUuid];
+      Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
+
+      if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+    }
 
     return shipInstance;
   }
@@ -162,7 +190,11 @@ public class Game : Node
     missileInstance.uuid = egeb.Uuid;
 
     // missiles have owners, so find the right player (hopefully)
+    // TODO: this could conceivably blow up if we got missile information before we got player information
     missileInstance.MyPlayer = playerObjects[egeb.ownerUUID];
+    
+    // players own missiles, inversely
+    missileInstance.MyPlayer.MyMissile = missileInstance;
 
     missileObjects.Add(egeb.Uuid, missileInstance);
     missileInstance.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
@@ -288,20 +320,14 @@ public class Game : Node
 
   public override void _Notification(int what)
   {
+    // when the game window is closed, you get this notification
     if (what == MainLoop.NotificationWmQuitRequest)
     {
       cslogger.Info("Game.cs: Got quit notification");
       // check if our UUID is set. If it isn't, we don't have to send a leave
-      // message, so we can just return
+      // message for our player, so we can just return
       if (myUuid == null) return;
       QuitGame();
     }
-    //GetTree().Quit(); // default behavior
   }
-
-  //  // Called every frame. 'delta' is the elapsed time since the previous frame.
-  //  public override void _Process(float delta)
-  //  {
-  //      
-  //  }
 }
