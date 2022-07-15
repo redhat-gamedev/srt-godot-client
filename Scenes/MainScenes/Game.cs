@@ -9,6 +9,8 @@ public class Game : Node
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
 
+  Boolean inGame = false;
+
   // UI elements
   CanvasLayer gameUI;
   TextureRect speedometer;
@@ -52,6 +54,9 @@ public class Game : Node
 
   public void initializeGameUI() 
   {
+    // we are now in the game
+    inGame = true;
+
     // load the textures for the missile statuses
     missileReadyIndicatorDefault = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
     missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
@@ -85,16 +90,21 @@ public class Game : Node
     var velocity = Vector2.Zero; // The player's movement direction.
     var shoot = Vector2.Zero; // the player's shoot status
 
-    // check for inputs
-    if (Input.IsActionPressed("rotate_right")) velocity.x += 1;
-    if (Input.IsActionPressed("rotate_left")) velocity.x -= 1;
-    if (Input.IsActionPressed("thrust_forward")) velocity.y += 1;
-    if (Input.IsActionPressed("thrust_reverse")) velocity.y -= 1;
-    if (Input.IsActionPressed("fire")) shoot.y = 1;
-    if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
+    // check for inputs once we are ingame
+    // TODO: this seems like a horrible and inefficient way to do this. We should probably
+    // start the game in the login screen scene and then completely switch to the game scene
+    // instead of doing this, no?
+    if (inGame)
+    {
+      if (Input.IsActionPressed("rotate_right")) velocity.x += 1;
+      if (Input.IsActionPressed("rotate_left")) velocity.x -= 1;
+      if (Input.IsActionPressed("thrust_forward")) velocity.y += 1;
+      if (Input.IsActionPressed("thrust_reverse")) velocity.y -= 1;
+      if (Input.IsActionPressed("fire")) shoot.y = 1;
+      if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
 
-    if (myShip != null) updateGameUI();
-
+      if (myShip != null) updateGameUI();
+    }
   }
 
   public bool JoinGameAsPlayer(string playerName)
