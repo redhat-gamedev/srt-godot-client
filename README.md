@@ -2,7 +2,7 @@
 This is the player side source code for the SRT game. A multiplayer space game written in Godot.
 
 ### How Can I Play This Game
-Everything in currently in development. To play you'll need to roll up your sleves and do a little bit of build/operations work.
+Everything in currently in development. To play you'll need to roll up your sleves and do a little bit of build/operations work. See the development notes below for instructions on how to do that.
 
 ## Architecture
 TBD
@@ -22,15 +22,15 @@ Then, in the `proto` folder:
 protogen --csharp_out=. *.proto
 ```
 
-### Building
+### Building the Client
 TBD
 
 ### Running Your Own Everything / Testing Locally
 You will need to run the game server, the AMQ messaging server, and this game (client-side).
 We will eventually clean all this up to make it easier. For now there is a fair amount of manual work to be done. See below...
 
-#### Broker
-* Option 1. To run AMQ locally (in a container via podman/docker):
+#### Broker ( [Apache Artemis](https://activemq.apache.org/components/artemis/download/) / [Red Hat AMQ](https://developers.redhat.com/products/amq/download) )
+* Option 1. To run the messaging broker locally (in a container via podman/docker):
 `podman run --name artemis -it -p 8161:8161 -p 5672:5672 --ip 10.88.0.2 -e AMQ_USER=admin -e AMQ_PASSWORD=admin -e AMQ_ALLOW_ANONYMOUS=true quay.io/artemiscloud/activemq-artemis-broker:latest`
 
 In order to get a specific IP for a local container running Artemis, you will need to do this as the root system user.
@@ -39,10 +39,11 @@ Above command puts AMQ serving on IP address 10.88.0.2 with ports 8161 (the mana
 * Option 2. You can run artemis natively with:
 run `./artemis create gamebroker --user XXXXX --password XXXXX --role admin --name broker --allow-anonymous --force`
 
-It will provide the command to run your newly configured broker
+It will provide the command to run your newly configured broker which will look something like:
+`apache-artemis-2.23.1/bin/gamebroker/bin/artemis-service start`
 
 * Option 3. Running in a Kubernetes cluster
-TBD - helm to launch
+TBD
 
 #### Server
 Find/follow instructions for the [game server here](https://github.com/redhat-gamedev/srt-godot-server).
