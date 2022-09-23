@@ -41,14 +41,28 @@ public class ServerConnection : Node
     game = GetNode<Game>("/root/Game");
 
     var clientConfig = new ConfigFile();
-    Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
+    Godot.Error err; 
+
+    cslogger.Debug("ServerConnection.cs: Attempting to load embedded client config");
+    err = clientConfig.Load("res://Resources/client.cfg");
     if (err == Godot.Error.Ok)
     {
-      cslogger.Info("ServerConnection.cs: Successfully loaded the AMQ config from 'res://Resources/client.cfg'");
+      cslogger.Info("ServerConnection.cs: Successfully loaded the config from 'res://Resources/client.cfg'");
       url = (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
-      cslogger.Verbose("ServerConnection.cs: config file: setting url to " + url);
+      cslogger.Debug("ServerConnection.cs: config file: setting url to " + url);
       disableCertValidation = (bool)clientConfig.GetValue("amqp", "disable_cert_validation", true);
-      cslogger.Verbose("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
+      cslogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
+    }
+
+    cslogger.Debug("ServerConnection.cs: Overriding with client local/user config");
+    err = clientConfig.Load("user://client.cfg");
+    if (err == Godot.Error.Ok)
+    {
+      cslogger.Info("ServerConnection.cs: Successfully loaded the config from 'user://client.cfg'");
+      url = (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
+      cslogger.Debug("ServerConnection.cs: config file: setting url to " + url);
+      disableCertValidation = (bool)clientConfig.GetValue("amqp", "disable_cert_validation", true);
+      cslogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
     }
 
     InitializeAMQP();
