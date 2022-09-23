@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using redhatgamedev.srt;
 
@@ -8,6 +9,8 @@ public class Game : Node
 {
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
+
+  private Stopwatch GameStopwatch = new Stopwatch();
 
   Boolean inGame = false;
 
@@ -27,11 +30,15 @@ public class Game : Node
   Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip = null;
 
+  PackedScene PackedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
+  PackedScene PlayerShipThing = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/Player.tscn");
+
   public String myUuid = null;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
+    GameStopwatch.Start();
     cslogger = GetNode<CSLogger>("/root/CSLogger");
     cslogger.Info("Space Ring Things (SRT) Game Client v???");
 
@@ -151,8 +158,7 @@ public class Game : Node
   {
     cslogger.Debug("CreateShipForUUID: " + uuid);
     // TODO: check to ensure it doesn't already exist
-    PackedScene playerShipThing = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/Player.tscn");
-    Node2D playerShipThingInstance = (Node2D)playerShipThing.Instance();
+    Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
     PlayerShip shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
     shipInstance.uuid = uuid;
 
@@ -178,6 +184,40 @@ public class Game : Node
 
     return shipInstance;
   }
+  
+  /// <summary>
+  /// Called when the network processes a game event with a update ship event
+  /// </summary>
+  /// <param name="uuid"></param>
+  /// <returns>the ship instance</returns>
+  // TODO: wouldn't it be more appropriate to call this GetShipFromUUID ? since we're fetching the ship.
+  public PlayerShip UpdateShipWithUUID(string uuid)
+  {
+    PlayerShip shipInstance;
+    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    {
+      // must've joined before us - so we didn't get the create event, create it
+      cslogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
+      shipInstance = this.CreateShipForUUID(uuid);
+    }
+    return shipInstance;
+  }
+
+  /// <summary>Called when a ship destroy message is received</summary>
+  /// <param name="uuid"></param>
+  /// <returns>nothing</returns>
+  public void DestroyShipWithUUID(string uuid)
+  {
+    PlayerShip shipInstance;
+
+    // if we don't find anything, do nothing, since there's nothing displayed yet to remove
+    if (playerObjects.TryGetValue(uuid, out shipInstance))
+    {
+      playerObjects.Remove(uuid);
+      // need to free the parent of the ship, which is the "shipthing"
+      shipInstance.GetParent().QueueFree();
+    }
+  }
 
   /// <summary>
   /// Called when the network processes a game event with a create missile event
@@ -187,14 +227,23 @@ public class Game : Node
   /// <returns>the created missile instance</returns>
   public SpaceMissile CreateMissileForUUID(EntityGameEventBuffer egeb)
   {
-    // we might have accidentally gotten a create after an update, so first
-    // check if a key already exists for the uuid
+    // check if a key already exists for the uuid and return that missile if it does
     SpaceMissile existingMissile;
-    if (missileObjects.TryGetValue(egeb.Uuid, out existingMissile)) { return existingMissile; }
+    if (missileObjects.TryGetValue(egeb.Uuid, out existingMissile)) 
+    { 
+      cslogger.Debug($"Game.cs: Existing missile found for UUID: {egeb.Uuid}");
 
+      // check if it's our own missile that we're finally getting the create for
+      if (existingMissile.uuid == myShip.MyMissile.uuid)
+      { 
+        cslogger.Debug($"Game.cs: Missile create was for our own existing missile");
+      }
+      return existingMissile; 
+    }
+
+    // TODO: refactor missile setup into a dedicated function to prevent all this duplicated code
     // set up the new missile
-    PackedScene packedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
-    SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instance();
+    SpaceMissile missileInstance = (SpaceMissile)PackedMissile.Instance();
 
     // set the missile's UUID to the message's UUID
     missileInstance.uuid = egeb.Uuid;
@@ -223,22 +272,61 @@ public class Game : Node
     return missileInstance;
   }
 
-  /// <summary>
-  /// Called when the network processes a game event with a update ship event
-  /// </summary>
-  /// <param name="uuid"></param>
-  /// <returns>the ship instance</returns>
-  // TODO: wouldn't it be more appropriate to call this GetShipFromUUID ? since we're fetching the ship.
-  public PlayerShip UpdateShipWithUUID(string uuid)
+  void CreateLocalMissileForUUID(string uuid)
   {
-    PlayerShip shipInstance;
-    if (!playerObjects.TryGetValue(uuid, out shipInstance))
-    {
-      // must've joined before us - so we didn't get the create event, create it
-      cslogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
-      shipInstance = this.CreateShipForUUID(uuid);
+    cslogger.Debug($"Game.cs: CreateLocalMissileForUUID");
+    // check if we already have a missile and return if we do
+    if (myShip.MyMissile != null) 
+    { 
+      cslogger.Debug($"Game.cs: Missile already exists, aborting.");
+      return; 
     }
-    return shipInstance;
+
+    cslogger.Debug($"Game.cs: Creating local missile with uuid {uuid}");
+    // set up the new missile
+    PackedScene packedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
+
+    SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instance();
+
+    // set the missile's UUID to the message's UUID
+    missileInstance.uuid = uuid;
+
+    // missiles have owners, so find the right player (hopefully)
+    // TODO: this could conceivably blow up if we got missile information before we got player information
+    missileInstance.MyPlayer = myShip;
+    
+    // players own missiles, inversely
+    missileInstance.MyPlayer.MyMissile = missileInstance;
+
+    missileObjects.Add(uuid, missileInstance);
+
+    // missile should point in the same direction as the ship
+    missileInstance.Rotation = myShip.Rotation;
+
+    // TODO: need to offset this to the front of the ship
+    // start at our position
+    missileInstance.Position = myShip.GlobalPosition;
+
+    // negative direction is "up"
+    Vector2 offset = new Vector2(0, -60);
+
+    // rotate the offset to match the current ship heading
+    offset = offset.Rotated(myShip.Rotation);
+    missileInstance.Position = missileInstance.Position + offset;
+
+    cslogger.Debug("Game.cs: Adding missile to scene tree");
+    AddChild(missileInstance);
+
+    // just in case we need to use it later
+    missileInstance.AddToGroup("missiles");
+
+    // Run the missile animation
+    cslogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
+    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
+    missileFiringAnimation.Frame = 0;
+    missileFiringAnimation.Play("launch");
+
+    cslogger.Debug($"Game.cs: CreateLocalMissileForUUID");
   }
 
   /// <summary>
@@ -259,21 +347,7 @@ public class Game : Node
     return missileInstance;
   }
 
-  /// <summary>Called when a ship destroy message is received</summary>
-  /// <param name="uuid"></param>
-  /// <returns>nothing</returns>
-  public void DestroyShipWithUUID(string uuid)
-  {
-    PlayerShip shipInstance;
 
-    // if we don't find anything, do nothing, since there's nothing displayed yet to remove
-    if (playerObjects.TryGetValue(uuid, out shipInstance))
-    {
-      playerObjects.Remove(uuid);
-      // need to free the parent of the ship, which is the "shipthing"
-      shipInstance.GetParent().QueueFree();
-    }
-  }
   /// <summary>Called when a missile destroy message is received</summary>
   /// <param name="uuid"></param>
   /// <returns>nothing</returns>
@@ -315,10 +389,19 @@ public class Game : Node
       if (shoot.Length() > 0)
       {
         cslogger.Debug("Game.cs: Got shoot command");
+        // TODO: we should probably just return if our missile already exists
+        // instead of going through this rigamarole
+
         // TODO: make this actually depend on ship direction
         Box2d.PbVec2 b2dShoot = new Box2d.PbVec2();
         b2dShoot.Y = 1;
         dsricb.pbv2Shoot = b2dShoot;
+
+        // suggest a UUID for our new missile
+        dsricb.missileUUID = System.Guid.NewGuid().ToString();
+
+        // instantiate the missile locally
+        CreateLocalMissileForUUID(dsricb.missileUUID);
       }
 
       ricb.dualStickRawInputCommandBuffer = dsricb;
