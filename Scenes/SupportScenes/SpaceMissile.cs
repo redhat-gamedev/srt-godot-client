@@ -6,9 +6,10 @@ public class SpaceMissile : Area2D
 {
   CSLogger cslogger;
 
-  public float MissileLife;
+  // TODO: need to get this information from the server
+  public float MissileLife = 2;
 
-  public int MissileSpeed;
+  public int MissileSpeed = 300;
 
   public int MissileDamage;
 
@@ -74,27 +75,17 @@ public class SpaceMissile : Area2D
     QueueFree();
   }
 
-  //public override void _PhysicsProcess(float delta)
-  //{
-  //  // TODO disable the collision shape until the missile is "away" from the ship
+  public override void _PhysicsProcess(float delta)
+  {
+    // TODO disable the collision shape until the missile is "away" from the ship
 
-  //  // create a new vector and rotate it by the current heading of the missile
-  //  // then move the missile in the direction of that vector
-  //  Vector2 velocity = new Vector2(0, -1);
-  //  velocity = velocity.Rotated(Rotation);
-  //  velocity = velocity * MissileSpeed * delta;
-  //  Position += velocity;
-
-  //  // once the life reaches zero, remove the missile and don't forget
-  //  // to expire it from the parent's perspective
-  //  MissileLife -= delta;
-  //  if (MissileLife <= 0) { 
-  //    QueueFree(); 
-
-  //    // there's got to be a better way
-  //    MyPlayer.ExpireMissile();
-  //  }
-  //}
+    // create a new vector and rotate it by the current heading of the missile
+    // then move the missile in the direction of that vector
+    Vector2 velocity = new Vector2(0, -1);
+    velocity = velocity.Rotated(Rotation);
+    velocity = velocity * MissileSpeed * delta;
+    Position += velocity;
+  }
 
   //void _onSpaceMissileBodyEntered(Node body)
   //{

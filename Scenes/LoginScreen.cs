@@ -14,6 +14,9 @@ public class LoginScreen : Control
 
     textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
     textField.GrabFocus();
+
+    // TODO: need to interrogate server for the initial defaults for things like
+    // missile speed
   }
 
   private void _on_JoinButton_button_up()
