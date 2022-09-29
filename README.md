@@ -8,6 +8,8 @@ Everything in currently in development. To play you'll need to roll up your slev
 TBD
 
 ## Development Notes
+This repo now uses submodules to point to the Networking/protobufs. Make sure to `--recurse-submodules` when you clone. If you've already cloned prior to this change, then run the following `git submodule update --init`.
+
 ### Networking Code Gen (Protobuf)
 After making changes to the protocol buffer definitions, they need to be compiled to C# code.
 You will need the `dotnet` command line tool (or equivalent) in order to do this.
