@@ -11,7 +11,8 @@ TBD
 This repo now uses submodules to point to the Networking/protobufs. Make sure to `--recurse-submodules` when you clone. If you've already cloned prior to this change, then run the following `git submodule update --init`.
 
 ### Networking Code Gen (Protobuf)
-After making changes to the protocol buffer definitions, they need to be compiled to C# code.
+The protocol buffer definitions are generated automatically via CI/CD in thier own git repo. That code is linked via git submodule by this repo. However, if you do need to make local client-side only changes, you can manually gen the C# code with the following instructions:
+
 You will need the `dotnet` command line tool (or equivalent) in order to do this.
 
 Intstall the Protogen tooling:
