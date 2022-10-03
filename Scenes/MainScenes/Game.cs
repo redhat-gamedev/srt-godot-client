@@ -386,11 +386,10 @@ public class Game : Node
         dsricb.pbv2Move = b2dMove;
       }
 
-      if (shoot.Length() > 0)
+      // only process a shoot command if we don't already have our own missile
+      if ( (shoot.Length() > 0) && (myShip.MyMissile == null) )
       {
         cslogger.Debug("Game.cs: Got shoot command");
-        // TODO: we should probably just return if our missile already exists
-        // instead of going through this rigamarole
 
         // TODO: make this actually depend on ship direction
         Box2d.PbVec2 b2dShoot = new Box2d.PbVec2();
