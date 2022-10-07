@@ -3,14 +3,17 @@ using System;
 
 public class LoginScreen : Control
 {
-  CSLogger cslogger;
-  Game game;
+  Game MyGame;
+
+  public Serilog.Core.Logger _serilogger;
+
   LineEdit textField;
 
   public override void _Ready()
   {
-    cslogger = GetNode<CSLogger>("/root/CSLogger");
-    game = GetNode<Game>("/root/Game");
+    MyGame = GetNode<Game>("/root/Game");
+    _serilogger = MyGame._serilogger;
+
 
     textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
     textField.GrabFocus();
@@ -21,23 +24,23 @@ public class LoginScreen : Control
 
   private void _on_JoinButton_button_up()
   {
-    cslogger.Info($"LoginScreen: trying to login as {textField.Text}");
+    _serilogger.Information($"LoginScreen: trying to login as {textField.Text}");
 
     //EmitSignal("SetPlayerName", textField.Text);
-    bool success = game.JoinGameAsPlayer(textField.Text);
+    bool success = MyGame.JoinGameAsPlayer(textField.Text);
     if (!success)
     {
-      cslogger.Info($"LoginScreen: join failed TODO tell player why");
+      _serilogger.Information($"LoginScreen: join failed TODO tell player why");
       // TODO: alert errors or something 
     }
     else
     {
-      game.myUuid = textField.Text;
+      MyGame.myUuid = textField.Text;
       // since we successfully joined the game, we can remove this node
       // which is the login screen. removing the login screen "displays"
       // the main game window
       QueueFree();
-      game.initializeGameUI();
+      MyGame.initializeGameUI();
     }
   }
 }

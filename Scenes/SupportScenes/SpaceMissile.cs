@@ -4,7 +4,9 @@ using redhatgamedev.srt;
 
 public class SpaceMissile : Area2D
 {
-  CSLogger cslogger;
+  Game MyGame;
+
+  public Serilog.Core.Logger _serilogger;
 
   // TODO: need to get this information from the server
   public float MissileLife = 2;
@@ -29,7 +31,7 @@ public class SpaceMissile : Area2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
   {
-    cslogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
+    _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
     this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
     this.RotationDegrees = egeb.Body.Angle;
   }
@@ -37,7 +39,7 @@ public class SpaceMissile : Area2D
   public void Expire()
   {
     // stop the regular animation and play the explosion animation
-    cslogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
+    _serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
     GetNode<Sprite>("Sprite").Hide();
     GetNode<AnimatedSprite>("Animations").Hide();
     missileAnimation.Stop();
@@ -50,7 +52,8 @@ public class SpaceMissile : Area2D
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    cslogger = GetNode<CSLogger>("/root/CSLogger");
+    MyGame = GetNode<Game>("/root/Game");
+    _serilogger = MyGame._serilogger;
 
     // connect the hit signal to handling the hit
     //Connect(nameof(Hit), this, "_HandleHit");
@@ -70,7 +73,7 @@ public class SpaceMissile : Area2D
 
   void _on_Explosion_animation_finished()
   {
-    cslogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
+    _serilogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
     // when the explosion animation finishes, remove the missile from the scene
     QueueFree();
   }
@@ -89,7 +92,7 @@ public class SpaceMissile : Area2D
 
   //void _onSpaceMissileBodyEntered(Node body)
   //{
-  //  cslogger.Debug("SpaceMissile.cs: Body entered!");
+  //  _serilogger.Debug("SpaceMissile.cs: Body entered!");
 
   //  if (body.GetType().Name != "PlayerShip")
   //  {
@@ -109,7 +112,7 @@ public class SpaceMissile : Area2D
 
   //void _HandleHit(PlayerShip HitPlayer)
   //{
-  //  cslogger.Debug("SpaceMissile.cs: Evaluating hit!");
+  //  _serilogger.Debug("SpaceMissile.cs: Evaluating hit!");
   //  QueueFree();
   //  MyPlayer.ExpireMissile();
   //  HitPlayer.TakeDamage(MissileDamage);
