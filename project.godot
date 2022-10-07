@@ -16,9 +16,6 @@ config/icon="res://icon.png"
 
 [autoload]
 
-GDLogger="*res://Autoload/logger.gd"
-CSLogger="*res://Autoload/CSLogger.cs"
-
 [display]
 
 window/size/width=1280

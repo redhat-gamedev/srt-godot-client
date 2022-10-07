@@ -39,7 +39,11 @@ public class PlayerShip : KinematicBody2D
   int MissileDamage = 25;
 
   public String uuid;
-  CSLogger cslogger;
+
+  Game MyGame;
+
+  public Serilog.Core.Logger _serilogger;
+
   //public Queue MovementQueue = new Queue();
   public SpaceMissile MyMissile = null; // for now only one missile at a time
 
@@ -50,8 +54,8 @@ public class PlayerShip : KinematicBody2D
   /// </summary>
   public override void _Ready()
   {
-    // initialize the logging configuration
-    cslogger = GetNode<CSLogger>("/root/CSLogger");
+    MyGame = GetNode<Game>("/root/Game");
+    _serilogger = MyGame._serilogger;
 
     shipThing = (Node2D)GetParent();
     //Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
@@ -146,7 +150,7 @@ public class PlayerShip : KinematicBody2D
 
     Node rootNode = GetNode<Node>("/root/");
     rootNode.AddChild(MyMissile);
-    cslogger.Debug("Added missile instance!");
+    _serilogger.Debug("Added missile instance!");
   }
 
   /// <summary>
@@ -155,9 +159,9 @@ public class PlayerShip : KinematicBody2D
   /// <param name="Damage"></param>
   public void TakeDamage(int Damage)
   {
-    cslogger.Debug($"Player.cs: {uuid}: Taking damage: {Damage}");
+    _serilogger.Debug($"Player.cs: {uuid}: Taking damage: {Damage}");
     HitPoints -= Damage;
-    cslogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
+    _serilogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
   }
 
   //void RemovePlayer()
@@ -175,7 +179,7 @@ public class PlayerShip : KinematicBody2D
   {
     //if (HitPoints <= 0)
     //{
-    //  cslogger.Debug("Hitpoints zeroed! Remove the player!");
+    //  _serilogger.Debug("Hitpoints zeroed! Remove the player!");
     //  //RemovePlayer();
     //  // TODO: you're dead - should this come from server of processed here?
     //}
