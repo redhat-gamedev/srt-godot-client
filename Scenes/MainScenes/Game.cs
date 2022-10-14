@@ -86,8 +86,10 @@ public class Game : Node
     // update the speedometer for our player
     speedometer.GetNode<Label>("SpeedLabel").Text = myShip.CurrentVelocity.ToString("n2");
 
-    // if we have a missile, set the indicator to red, otherwise set the indicator to green
-    if (myShip.MyMissile != null) missileReadyIndicator.Texture = missileReadyIndicatorNotReady;
+    // if we have a missile, or we're not ready to reload, set the indicator to
+    // red, otherwise set the indicator to green
+    if ( (myShip.MyMissile != null) || (!myShip.MissileReady) ) 
+      { missileReadyIndicator.Texture = missileReadyIndicatorNotReady; }
     else missileReadyIndicator.Texture = missileReadyIndicatorReady;
   }
 
@@ -274,13 +276,23 @@ public class Game : Node
 
   void CreateLocalMissileForUUID(string uuid)
   {
-    _serilogger.Debug($"Game.cs: CreateLocalMissileForUUID");
     // check if we already have a missile and return if we do
     if (myShip.MyMissile != null) 
     { 
       _serilogger.Debug($"Game.cs: Missile already exists, aborting.");
       return; 
     }
+
+    // check if we are not ready and return if we are not
+    if (!myShip.MissileReady)
+    { 
+      _serilogger.Debug($"Game.cs: Missile not ready, aborting.");
+      return; 
+    }
+
+    _serilogger.Debug($"Game.cs: Setting missile to not ready");
+    myShip.MissileReady = false;
+    myShip.MissileReloadCountdown = myShip.MissileReloadTime;
 
     _serilogger.Debug($"Game.cs: Creating local missile with uuid {uuid}");
     // set up the new missile
@@ -300,6 +312,9 @@ public class Game : Node
 
     missileObjects.Add(uuid, missileInstance);
 
+    // just in case we need to use it later
+    missileInstance.AddToGroup("missiles");
+
     // missile should point in the same direction as the ship
     missileInstance.Rotation = myShip.Rotation;
 
@@ -317,16 +332,11 @@ public class Game : Node
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
     AddChild(missileInstance);
 
-    // just in case we need to use it later
-    missileInstance.AddToGroup("missiles");
-
     // Run the missile animation
     _serilogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
     AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
     missileFiringAnimation.Frame = 0;
     missileFiringAnimation.Play("launch");
-
-    _serilogger.Debug($"Game.cs: CreateLocalMissileForUUID");
   }
 
   /// <summary>
@@ -387,7 +397,7 @@ public class Game : Node
       }
 
       // only process a shoot command if we don't already have our own missile
-      if ( (shoot.Length() > 0) && (myShip.MyMissile == null) )
+      if ( (shoot.Length() > 0) && (myShip.MyMissile == null) && (myShip.MissileReady) )
       {
         _serilogger.Debug("Game.cs: Got shoot command");
 

@@ -5,38 +5,34 @@ using redhatgamedev.srt;
 
 public class PlayerShip : KinematicBody2D
 {
-  [Export]
   public float Thrust = 1f; // effective acceleration
 
-  [Export]
   public float MaxSpeed = 5;
 
-  [Export]
   public float StopThreshold = 10f;
 
-  [Export]
   public float GoThreshold = 90f;
 
-  [Export]
   public float CurrentVelocity = 0;
 
-  [Export]
   public float RotationThrust = 1.5f;
 
-  [Export]
   public float CurrentRotation = 0;
 
-  [Export]
   public int HitPoints = 100;
 
-  [Export]
   int MissileSpeed = 300;
 
-  [Export]
   float MissileLife = 4;
 
-  [Export]
   int MissileDamage = 25;
+
+  // the reload time is the minimum time between missile firings
+  // relevant when two players are very close to one another and
+  // prevents missile spamming
+  public float MissileReloadTime = 2;
+  public float MissileReloadCountdown;
+  public bool MissileReady = true;
 
   public String uuid;
 
@@ -110,9 +106,7 @@ public class PlayerShip : KinematicBody2D
   /// </summary>
   public void ExpireMissile() { MyMissile = null; }
 
-  /// <summary>
-  /// 
-  /// </summary>
+  // TODO: this is unused -- should we relocate fire methods from Game.cs?
   public void FireMissile()
   {
     // only one missile allowed for now
@@ -164,39 +158,22 @@ public class PlayerShip : KinematicBody2D
     _serilogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
   }
 
-  //void RemovePlayer()
-  //{
-  //  cslogger.Verbose($"Player.cs: removing {uuid}");
-  //  Server theServer = (Server)GetNode("/root/Server");
-  //  theServer.RemovePlayer(uuid);
-  //s}
+  void CheckMissileReload(float delta)
+  {
+    // nothing to check if we are already reloaded
+    if (MissileReady == true) { return; }
 
-  /// <summary>
-  /// 
-  /// </summary>
-  /// <param name="delta"></param>
+    MissileReloadCountdown -= delta;
+    if (MissileReloadCountdown <= 0)
+    { 
+      _serilogger.Debug($"PlayerShip.cs: player {uuid} missile reload countdown complete");
+      MissileReady = true;
+    }
+  }
+
   public override void _Process(float delta)
   {
-    //if (HitPoints <= 0)
-    //{
-    //  _serilogger.Debug("Hitpoints zeroed! Remove the player!");
-    //  //RemovePlayer();
-    //  // TODO: you're dead - should this come from server of processed here?
-    //}
-
-    //Node2D shipThing = (Node2D)GetParent();
-
-    //// TODO: we are doing instant rotation so probably should rename this
-    //Label angularVelocityLabel = (Label)shipThing.GetNode("Stat/AngularVelocity");
-    //Label linearVelocityLabel = (Label)shipThing.GetNode("Stat/LinearVelocity");
-    //Label hitPointsLabel = (Label)shipThing.GetNode("Stat/HitPoints");
-    //Label positionLabel = (Label)shipThing.GetNode("Stat/Position");
-    //Label hexLabel = (Label)shipThing.GetNode("Stat/Hex");
-
-    //angularVelocityLabel.Text = $"Rot: {RotationDegrees}";
-    //linearVelocityLabel.Text = $"Vel: {CurrentVelocity}";
-    //hitPointsLabel.Text = $"HP: {HitPoints}";
-    //positionLabel.Text = $"X: {GlobalPosition.x} Y: {GlobalPosition.y}";
+    CheckMissileReload(delta);
   }
 
 }
