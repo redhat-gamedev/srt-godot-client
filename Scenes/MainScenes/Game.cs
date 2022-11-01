@@ -2,13 +2,13 @@ using Godot;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using redhatgamedev.srt;
+using redhatgamedev.srt.v1;
 using Serilog;
 
 // This class is autoloaded
 public class Game : Node
 {
-  public Serilog.Core.Logger _serilogger = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().CreateLogger();  
+  public Serilog.Core.Logger _serilogger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Console().CreateLogger();  
   
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
@@ -122,16 +122,13 @@ public class Game : Node
     _serilogger.Debug($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
 
     // construct a join message
-    SecurityCommandBuffer scb = new SecurityCommandBuffer();
+    Security scb = new Security();
 
     //scb.Uuid = ServerConnection.UUID;
     scb.Uuid = playerName;
 
-    scb.Type = SecurityCommandBuffer.SecurityCommandBufferType.Join;
-    CommandBuffer cb = new CommandBuffer();
-    cb.Type = CommandBuffer.CommandBufferType.Security;
-    cb.securityCommandBuffer = scb;
-    serverConnection.SendCommand(cb);
+    scb.security_type = Security.SecurityType.SecurityTypeJoin;
+    serverConnection.SendSecurity(scb);
 
     return true; // TODO: this can't always be true
 
@@ -141,13 +138,10 @@ public class Game : Node
   void QuitGame()
   {
     // our UUID was set, so we should send a leave message to be polite
-    SecurityCommandBuffer scb = new SecurityCommandBuffer();
+    Security scb = new Security();
     scb.Uuid = myUuid;
-    scb.Type = SecurityCommandBuffer.SecurityCommandBufferType.Leave;
-    CommandBuffer cb = new CommandBuffer();
-    cb.Type = CommandBuffer.CommandBufferType.Security;
-    cb.securityCommandBuffer = scb;
-    serverConnection.SendCommand(cb);
+    scb.security_type = Security.SecurityType.SecurityTypeLeave;
+    serverConnection.SendSecurity(scb);
   }
 
   /// <summary>
@@ -227,7 +221,7 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the created missile instance</returns>
-  public SpaceMissile CreateMissileForUUID(EntityGameEventBuffer egeb)
+  public SpaceMissile CreateMissileForUUID(GameEvent egeb)
   {
     // check if a key already exists for the uuid and return that missile if it does
     SpaceMissile existingMissile;
@@ -252,14 +246,14 @@ public class Game : Node
 
     // missiles have owners, so find the right player (hopefully)
     // TODO: this could conceivably blow up if we got missile information before we got player information
-    missileInstance.MyPlayer = playerObjects[egeb.ownerUUID];
+    missileInstance.MyPlayer = playerObjects[egeb.OwnerUuid];
     
     // players own missiles, inversely
     missileInstance.MyPlayer.MyMissile = missileInstance;
 
     missileObjects.Add(egeb.Uuid, missileInstance);
-    missileInstance.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
-    missileInstance.RotationDegrees = egeb.Body.Angle;
+    missileInstance.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+    missileInstance.RotationDegrees = egeb.Angle;
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
     AddChild(missileInstance);
 
@@ -344,13 +338,13 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the missile instance</returns>
-  public SpaceMissile UpdateMissileWithUUID(EntityGameEventBuffer egeb)
+  public SpaceMissile UpdateMissileWithUUID(GameEvent egeb)
   {
     SpaceMissile missileInstance;
     if (!missileObjects.TryGetValue(egeb.Uuid, out missileInstance))
     {
       // the missile existed before we started, so we didn't get the create event
-      _serilogger.Debug($"Game.cs: UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.ownerUUID}");
+      _serilogger.Debug($"Game.cs: UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.OwnerUuid}");
       missileInstance = this.CreateMissileForUUID(egeb);
     }
 
@@ -377,45 +371,36 @@ public class Game : Node
   void ProcessInputEvent(Vector2 velocity, Vector2 shoot)
   {
     // there was some kind of input, so construct a message to send to the server
-    CommandBuffer cb = new CommandBuffer();
-    cb.Type = CommandBuffer.CommandBufferType.Rawinput;
+    Command cb = new Command();
+    cb.Uuid = myUuid;
 
-    RawInputCommandBuffer ricb = new RawInputCommandBuffer();
-    ricb.Type = RawInputCommandBuffer.RawInputCommandBufferType.Dualstick;
-    ricb.Uuid = myUuid;
-
-    DualStickRawInputCommandBuffer dsricb = new DualStickRawInputCommandBuffer();
     if ((velocity.Length() > 0) || (shoot.Length() > 0))
     {
       if (velocity.Length() > 0)
       {
         _serilogger.Debug("Game.cs: Got move command");
-        Box2d.PbVec2 b2dMove = new Box2d.PbVec2();
-        b2dMove.X = velocity.x;
-        b2dMove.Y = velocity.y;
-        dsricb.pbv2Move = b2dMove;
+        cb.command_type = Command.CommandType.CommandTypeMove;
+        cb.InputX = (int)velocity.x;
+        cb.InputY = (int)velocity.y;
+        serverConnection.SendCommand(cb);
       }
 
       // only process a shoot command if we don't already have our own missile
       if ( (shoot.Length() > 0) && (myShip.MyMissile == null) && (myShip.MissileReady) )
       {
         _serilogger.Debug("Game.cs: Got shoot command");
-
-        // TODO: make this actually depend on ship direction
-        Box2d.PbVec2 b2dShoot = new Box2d.PbVec2();
-        b2dShoot.Y = 1;
-        dsricb.pbv2Shoot = b2dShoot;
+        cb.command_type = Command.CommandType.CommandTypeShoot;
 
         // suggest a UUID for our new missile
-        dsricb.missileUUID = System.Guid.NewGuid().ToString();
+        cb.MissileUuid = System.Guid.NewGuid().ToString();
+
+        // TODO: should we wrap this in some kind of try/catch?
+        // send the shoot command
+        serverConnection.SendCommand(cb);
 
         // instantiate the missile locally
-        CreateLocalMissileForUUID(dsricb.missileUUID);
+        CreateLocalMissileForUUID(cb.MissileUuid);
       }
-
-      ricb.dualStickRawInputCommandBuffer = dsricb;
-      cb.rawInputCommandBuffer = ricb;
-      serverConnection.SendCommand(cb);
     }
 
   }

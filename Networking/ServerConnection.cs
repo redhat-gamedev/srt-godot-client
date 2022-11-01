@@ -5,7 +5,7 @@ using Amqp;
 using Amqp.Framing;
 using Amqp.Types;
 using ProtoBuf;
-using redhatgamedev.srt;
+using redhatgamedev.srt.v1;
 
 // We use this class to represent a remote connection to the game servers
 public class ServerConnection : Node
@@ -16,14 +16,20 @@ public class ServerConnection : Node
 
   // AMQ Broker connection details
   private readonly String commandsQueue = "COMMAND.IN";
+  private readonly String securityQueue = "SECURITY.IN";
   private readonly String gameEventsTopic = "GAME.EVENT.OUT";
+
+  private readonly String securityOutTopic = "SECURITY.OUT";
+
   String url;
   bool disableCertValidation = true;
   ConnectionFactory factory;
   Connection amqpConnection;
   Session amqpSession;
   SenderLink commandsSender;
+  SenderLink securitySender;
   ReceiverLink gameEventsReceiver;
+  ReceiverLink securityOutReceiver;
   public static readonly string UUID = System.Guid.NewGuid().ToString();
 
   // Ugh - seems like we can't seralize protbuf classes via signals so this might not work
@@ -76,14 +82,13 @@ public class ServerConnection : Node
 
   private void GameEventReceived(IReceiverLink receiver, Message message)
   {
-    _serilogger.Verbose("Game Event received!");
+    _serilogger.Verbose("ServerConnection.cs: Game Event received!");
     try
     {
       receiver.Accept(message);
       byte[] binaryBody = (byte[])message.Body;
       MemoryStream st = new MemoryStream(binaryBody, false);
-      EntityGameEventBuffer egeb;
-      egeb = Serializer.Deserialize<EntityGameEventBuffer>(st);
+      GameEvent egeb = Serializer.Deserialize<GameEvent>(st);
 
       this.ProcessGameEvent(egeb); // TODO: move this into it's own class to declutter the networking code
     }
@@ -96,14 +101,32 @@ public class ServerConnection : Node
     }
   }
 
-  public void SendCommand(CommandBuffer commandBuffer)
+  private void SecurityReceived(IReceiverLink receiver, Message message)
+  {
+    _serilogger.Verbose("ServerConnection.cs: Security Event received!");
+    try
+    {
+      receiver.Accept(message);
+      byte[] binaryBody = (byte[])message.Body;
+      MemoryStream st = new MemoryStream(binaryBody, false);
+      Security security = Serializer.Deserialize<Security>(st);
+
+      this.ProcessSecurity(security); // TODO: move this into it's own class to declutter the networking code
+    }
+    catch (System.Exception)
+    {
+      
+      throw;
+    }
+  }
+
+  public void SendCommand(Command commandBuffer)
   {
     try
     {
       _serilogger.Verbose("ServerConnection.cs: Sending command");
       MemoryStream st = new MemoryStream();
-      Serializer.Serialize<CommandBuffer>(st, commandBuffer);
-      //Serializer.SerializeWithLengthPrefix<CommandBuffer>(st, commandBuffer, PrefixStyle.Base128, 123);
+      Serializer.Serialize<Command>(st, commandBuffer);
       byte[] msgBytes = st.ToArray();
       Message msg = new Message(msgBytes);
       commandsSender.Send(msg, null, null); // don't care about the ack on our message being received
@@ -119,8 +142,34 @@ public class ServerConnection : Node
     }
   }
 
+  public void SendSecurity(Security security)
+  {
+    try
+    {
+      _serilogger.Debug("ServerConnection.cs: Sending security");
+      MemoryStream st = new MemoryStream();
+      Serializer.Serialize<Security>(st, security);
+      byte[] msgBytes = st.ToArray();
+      Message msg = new Message(msgBytes);
+      securitySender.Send(msg, null, null); // don't care about the ack on our message being received
+
+      
+    }
+    catch (Exception ex)
+    {
+      _serilogger.Error("ServerConnection.cs: Send Security failed.");
+      _serilogger.Error(ex.Message);
+
+      // TODO: let player know / return to login screen
+
+      return;
+    }
+  }
+
   async void InitializeAMQP()
   {
+    String linkid;
+
     _serilogger.Debug("ServerConnection.cs: Initializing AMQP connection");
     Connection.DisableServerCertValidation = disableCertValidation;
     try
@@ -141,26 +190,75 @@ public class ServerConnection : Node
       return;
     }
 
-    var linkid = "srt-game-client-receiver-" + UUID;
+    // set up senders and receivers ////////////////////////////////////////////
+    linkid = "srt-game-client-command-receiver-" + UUID;
     _serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for game events: " + linkid);
-    Source eventInSource = new Source
+    Source eventOutSource = new Source
     {
       Address = gameEventsTopic,
       Capabilities = new Symbol[] { new Symbol("topic") }
     };
-    gameEventsReceiver = new ReceiverLink(amqpSession, linkid, eventInSource, null);
+    gameEventsReceiver = new ReceiverLink(amqpSession, linkid, eventOutSource, null);
     gameEventsReceiver.Start(10, GameEventReceived);
+
+    linkid = "srt-game-client-security-receiver-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for security events: " + linkid);
+    Source securityOutSource = new Source
+    {
+      Address = securityOutTopic,
+      Capabilities = new Symbol[] { new Symbol("topic") }
+    };
+    securityOutReceiver = new ReceiverLink(amqpSession, linkid, securityOutSource, null);
+    securityOutReceiver.Start(10, SecurityReceived);
 
     linkid = "srt-game-client-command-sender-" + UUID;
     _serilogger.Debug("ServerConnection.cs: Creating AMQ sender for player commands: " + linkid);
-    Target commandOutTarget = new Target
+    Target commandInTarget = new Target
     {
       Address = commandsQueue,
       Capabilities = new Symbol[] { new Symbol("queue") }
     };
-    commandsSender = new SenderLink(amqpSession, linkid, commandOutTarget, null);
+    commandsSender = new SenderLink(amqpSession, linkid, commandInTarget, null);
+
+    linkid = "srt-game-security-sender-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ sender for security commands: " + linkid);
+    Target securityInTarget = new Target
+    {
+      Address = securityQueue,
+      Capabilities = new Symbol[] { new Symbol("queue") }
+    };
+    securitySender = new SenderLink(amqpSession, linkid, securityInTarget, null);
 
     _serilogger.Debug("ServerConnection.cs: Finished initializing AMQP connection");
+  }
+
+  private void ProcessSecurity(Security security)
+  {
+    try
+    {
+      switch (security.security_type)
+      {
+        case Security.SecurityType.SecurityTypeAnnounce:
+          _serilogger.Debug($"ServerConnection.cs: Client {security.Uuid} announced");
+          // TODO: handle announce stuff
+          break;
+        case Security.SecurityType.SecurityTypeJoin:
+          // TODO: do something fancy because a player joined
+          break;
+        case Security.SecurityType.SecurityTypeLeave:
+          // TODO: do something fancy because a player left
+          break;
+        case Security.SecurityType.SecurityTypeUnspecified:
+          _serilogger.Verbose("ServerConnection.cs: Unspecified security message received");
+          break;
+      }
+    }
+    catch (Exception ex)
+    {
+      _serilogger.Error("ServerConnection.cs: Issue processing security event:");
+      _serilogger.Error(ex.Message);
+      return;
+    }
   }
 
   /// <summary>
@@ -173,23 +271,23 @@ public class ServerConnection : Node
   /// 
   /// </summary>
   /// <param name="egeb"></param>
-  private void ProcessGameEvent(EntityGameEventBuffer egeb)
+  private void ProcessGameEvent(GameEvent egeb)
   {
     try
     {
-      switch (egeb.Type)
+      switch (egeb.game_event_type)
       {
-        case EntityGameEventBuffer.EntityGameEventBufferType.Create:
+        case GameEvent.GameEventType.GameEventTypeCreate:
           _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [create]");
-          switch (egeb.objectType)
+          switch (egeb.game_object_type)
           {
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
               _serilogger.Information("ServerConnection.cs: Got create for a ship");
               PlayerShip newShip = MyGame.CreateShipForUUID(egeb.Uuid);
               newShip.UpdateFromGameEventBuffer(egeb);
               break;
 
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
               _serilogger.Information("ServerConnection.cs: Got create for a missile");
               SpaceMissile newMissile = MyGame.CreateMissileForUUID(egeb);
               newMissile.UpdateFromGameEventBuffer(egeb);
@@ -197,17 +295,17 @@ public class ServerConnection : Node
           }
           break;
 
-        case EntityGameEventBuffer.EntityGameEventBufferType.Destroy:
+        case GameEvent.GameEventType.GameEventTypeDestroy:
           _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [destroy]");
 
-          switch (egeb.objectType)
+          switch (egeb.game_object_type)
           {
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
               _serilogger.Information($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
               MyGame.DestroyShipWithUUID(egeb.Uuid);
               break;
 
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
               _serilogger.Information($"ServerConnection.cs: Got destroy for missile {egeb.Uuid}");
               MyGame.DestroyMissileWithUUID(egeb.Uuid);
               break;
@@ -215,11 +313,11 @@ public class ServerConnection : Node
           }
           break;
 
-        case EntityGameEventBuffer.EntityGameEventBufferType.Retrieve:
+        case GameEvent.GameEventType.GameEventTypeRetrieve:
           _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
           break;
 
-        case EntityGameEventBuffer.EntityGameEventBufferType.Update:
+        case GameEvent.GameEventType.GameEventTypeUpdate:
           // find/update the Node2D
           if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
           {
@@ -227,14 +325,14 @@ public class ServerConnection : Node
             return;
           }
 
-          switch (egeb.objectType)
+          switch (egeb.game_object_type)
           {
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Player:
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
               PlayerShip ship = MyGame.UpdateShipWithUUID(egeb.Uuid);
               ship.UpdateFromGameEventBuffer(egeb);
               break;
 
-            case EntityGameEventBuffer.EntityGameEventBufferObjectType.Missile:
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
               SpaceMissile missile = MyGame.UpdateMissileWithUUID(egeb);
               missile.UpdateFromGameEventBuffer(egeb);
               break;
