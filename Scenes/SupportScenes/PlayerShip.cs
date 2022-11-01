@@ -1,7 +1,7 @@
 using Godot;
 using System;
 using System.Collections;
-using redhatgamedev.srt;
+using redhatgamedev.srt.v1;
 
 public class PlayerShip : KinematicBody2D
 {
@@ -65,28 +65,19 @@ public class PlayerShip : KinematicBody2D
   /// </summary>
   /// <param name="BufferType"></param>
   /// <returns></returns>
-  public EntityGameEventBuffer CreatePlayerGameEventBuffer(EntityGameEventBuffer.EntityGameEventBufferType BufferType)
+  public GameEvent CreatePlayerGameEventBuffer(GameEvent.GameEventType BufferType)
   {
-    EntityGameEventBuffer egeb = new EntityGameEventBuffer();
-    egeb.Type = BufferType;
-    egeb.objectType = EntityGameEventBuffer.EntityGameEventBufferObjectType.Player;
+    GameEvent egeb = new GameEvent();
+    egeb.game_event_type = BufferType;
+    egeb.game_object_type = GameEvent.GameObjectType.GameObjectTypePlayer;
     egeb.Uuid = uuid;
 
-    Box2d.PbBody body = new Box2d.PbBody();
-    body.Type = Box2d.PbBodyType.Kinematic; // not sure if this should maybe be static
+    egeb.PositionX = (int)GlobalPosition.x;
+    egeb.PositionY = (int)GlobalPosition.y;
 
-    // need to use the GlobalPosition because the ship node ends up being offset
-    // from the parent Node2D
-    body.Position = new Box2d.PbVec2
-    {
-      X = GlobalPosition.x,
-      Y = GlobalPosition.y
-    };
+    egeb.Angle = RotationDegrees;
+    egeb.AbsoluteVelocity = CurrentVelocity;
 
-    body.Angle = RotationDegrees;
-    body.AbsoluteVelocity = CurrentVelocity;
-
-    egeb.Body = body;
     return egeb;
   }
 
@@ -94,11 +85,11 @@ public class PlayerShip : KinematicBody2D
   /// 
   /// </summary>
   /// <param name="egeb"></param>
-  public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
+  public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
-    this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
-    this.RotationDegrees = egeb.Body.Angle;
-    this.CurrentVelocity = egeb.Body.AbsoluteVelocity;
+    this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+    this.RotationDegrees = egeb.Angle;
+    this.CurrentVelocity = egeb.AbsoluteVelocity;
   }
 
   /// <summary>

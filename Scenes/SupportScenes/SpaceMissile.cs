@@ -1,6 +1,6 @@
 using Godot;
 using System;
-using redhatgamedev.srt;
+using redhatgamedev.srt.v1;
 
 public class SpaceMissile : Area2D
 {
@@ -29,11 +29,11 @@ public class SpaceMissile : Area2D
   /// 
   /// </summary>
   /// <param name="egeb"></param>
-  public void UpdateFromGameEventBuffer(EntityGameEventBuffer egeb)
+  public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    this.GlobalPosition = new Vector2(egeb.Body.Position.X, egeb.Body.Position.Y);
-    this.RotationDegrees = egeb.Body.Angle;
+    this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+    this.RotationDegrees = egeb.Angle;
   }
 
   public void Expire()
