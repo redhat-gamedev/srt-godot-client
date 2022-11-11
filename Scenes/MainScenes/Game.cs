@@ -25,8 +25,15 @@ public class Game : Node
   Texture missileReadyIndicatorReady;
   Texture missileReadyIndicatorNotReady;
   Texture missileReadyIndicatorDefault;
+  TextureRect gameRadar;
+  Texture shipBlip;
+
+  // radar update timer
+  int radarRefreshTime = 1; // 1000ms = 1sec
+  float radarRefreshTimer = 0;
 
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
+  [Export]
   Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
   Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip = null;
@@ -69,6 +76,9 @@ public class Game : Node
     missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
     missileReadyIndicatorReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
 
+    // load the ship blip texture
+    shipBlip = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/ship_blip.png");
+
     // TODO: should we be adding the GUI to the scene instead of displaying its elements?
     // find the HUD to show its elements
     gameUI = GetNode<CanvasLayer>("GUI");
@@ -79,6 +89,9 @@ public class Game : Node
     missileDisplay.Show();
 
     missileReadyIndicator = gameUI.GetNode<TextureRect>("Missile/MissileReadyIndicator");
+
+    gameRadar = gameUI.GetNode<TextureRect>("Radar");
+    gameRadar.Show();
   }
 
   void updateGameUI()
@@ -91,6 +104,50 @@ public class Game : Node
     if ( (myShip.MyMissile != null) || (!myShip.MissileReady) ) 
       { missileReadyIndicator.Texture = missileReadyIndicatorNotReady; }
     else missileReadyIndicator.Texture = missileReadyIndicatorReady;
+  }
+
+  void updateGameRadar()
+  {
+    // the radar circle is approximately 280x280 and its center is 
+    // approximately 169,215 on the image
+
+    // delete all the radar blips
+    // TODO: the performance on this is probably terrible
+    deleteChildren(gameRadar);
+
+    // iterate over the player objects
+    foreach(KeyValuePair<String, PlayerShip> entry in playerObjects)
+    {
+      String player = entry.Key;
+      PlayerShip playerShip = entry.Value;
+
+      // don't draw ourselves
+      if (player == myUuid) return;
+
+      _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
+
+      float deltaX = myShip.Position.x - playerShip.Position.x;
+      float deltaY = myShip.Position.y - playerShip.Position.y;
+
+      _serilogger.Verbose($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
+
+      // scale the relative position where 10,000 is the edge of the radar circle
+      float scaledX = (deltaX / 10000) * (280 / 2);
+      float scaledY = (deltaY / 10000) * (280 / 2);
+
+      // x and y are "upside down" for some reason
+      float finalX = (scaledX * -1) + 169;
+      float finalY = (scaledY * -1) + 215;
+
+      _serilogger.Verbose($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
+
+      // add a blip at the scaled location offset from the center
+      Sprite newBlip = new Sprite();
+      newBlip.Texture = shipBlip;
+      newBlip.Offset = new Vector2(finalX, finalY);
+    
+      gameRadar.AddChild(newBlip);
+    }
   }
 
   public override void _Process(float delta)
@@ -113,6 +170,19 @@ public class Game : Node
       if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
 
       if (myShip != null) updateGameUI();
+
+      // https://gdscript.com/solutions/godot-timing-tutorial/
+      // check if we should update the debug UI, which itself should only be done if 
+      // we are in a graphical mode
+      // TODO: only if in graphical debug mode
+      // TODO: should also probably use timer node
+      radarRefreshTimer += delta;
+      if (radarRefreshTimer >= radarRefreshTime)
+      { 
+        radarRefreshTimer = 0;
+        _serilogger.Debug($"Game.cs: Updating radar");
+        updateGameRadar();
+      }
     }
   }
 
@@ -378,7 +448,7 @@ public class Game : Node
     {
       if (velocity.Length() > 0)
       {
-        _serilogger.Debug("Game.cs: Got move command");
+        _serilogger.Verbose("Game.cs: Got move command");
         cb.command_type = Command.CommandType.CommandTypeMove;
         cb.InputX = (int)velocity.x;
         cb.InputY = (int)velocity.y;
@@ -388,7 +458,7 @@ public class Game : Node
       // only process a shoot command if we don't already have our own missile
       if ( (shoot.Length() > 0) && (myShip.MyMissile == null) && (myShip.MissileReady) )
       {
-        _serilogger.Debug("Game.cs: Got shoot command");
+        _serilogger.Verbose("Game.cs: Got shoot command");
         cb.command_type = Command.CommandType.CommandTypeShoot;
 
         // suggest a UUID for our new missile
@@ -417,4 +487,14 @@ public class Game : Node
       QuitGame();
     }
   }
+
+  void deleteChildren(Node theNode)
+  {
+    foreach (Node n in theNode.GetChildren())
+    {
+      theNode.RemoveChild(n);
+      n.QueueFree(); 
+    }
+  }
+
 }

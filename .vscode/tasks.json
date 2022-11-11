@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "build",
-      "command": "/home/thoraxe/Godot/Godot_v3.4.4-stable_mono_x11_64/Godot_v3.4.4-stable_mono_x11.64",
+      "command": "/opt/Godot/Godot_v3.5.1-stable_mono_x11_64/Godot_v3.5.1-stable_mono_x11.64",
       "type": "process",
       "args": [
         "--build-solutions",
