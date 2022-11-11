@@ -22,7 +22,7 @@
         "searchNuGetOrgSymbolServer": true
       },
       "preLaunchTask": "build",
-      "executable": "/home/thoraxe/Godot/Godot_v3.4.4-stable_mono_x11_64/Godot_v3.4.4-stable_mono_x11.64",
+      "executable": "/opt/Godot/Godot_v3.5.1-stable_mono_x11_64/Godot_v3.5.1-stable_mono_x11.64",
       // See which arguments are available here:
       // https://docs.godotengine.org/en/stable/getting_started/editor/command_line_tutorial.html
       "executableArguments": [
@@ -36,7 +36,7 @@
       "request": "launch",
       "mode": "executable",
       "preLaunchTask": "build",
-      "executable": "/home/thoraxe/Godot/Godot_v3.4.4-stable_mono_x11_64/Godot_v3.4.4-stable_mono_x11.64",
+      "executable": "/opt/Godot/Godot_v3.5.1-stable_mono_x11_64/Godot_v3.5.1-stable_mono_x11.64",
       "justMyCode": "false",
       // See which arguments are available here:
       // https://docs.godotengine.org/en/stable/getting_started/editor/command_line_tutorial.html

@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Assets/UIElements/HUD/HUD_speedometer.png" type="Texture" id=1]
 [ext_resource path="res://Assets/Fonts/RedHatText-Regular.tres" type="DynamicFont" id=2]
 [ext_resource path="res://Assets/UIElements/HUD/HUD_missile.png" type="Texture" id=3]
 [ext_resource path="res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png" type="Texture" id=4]
+[ext_resource path="res://Assets/UIElements/HUD/HUD_radar.png" type="Texture" id=5]
 
 [node name="GUI" type="CanvasLayer"]
 
@@ -41,3 +42,9 @@ margin_top = 122.0
 margin_right = 252.0
 margin_bottom = 218.0
 texture = ExtResource( 4 )
+
+[node name="Radar" type="TextureRect" parent="."]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+texture = ExtResource( 5 )

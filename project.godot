@@ -16,8 +16,8 @@ config/icon="res://icon.png"
 
 [display]
 
-window/size/width=1280
-window/size/height=1024
+window/size/width=1920
+window/size/height=1080
 
 [global]
 
@@ -65,6 +65,7 @@ zoom_out={
 
 [mono]
 
+project/assembly_name="srt-godot-client"
 export/include_scripts_content=true
 
 [physics]
