@@ -92,6 +92,7 @@ public class Game : Node
 
     gameRadar = gameUI.GetNode<TextureRect>("Radar");
     gameRadar.Show();
+    gameUI.GetNode<TextureRect>("RadarReticle").Show();
   }
 
   void updateGameUI()
