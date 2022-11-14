@@ -54,10 +54,10 @@ public class PlayerShip : KinematicBody2D
     _serilogger = MyGame._serilogger;
 
     shipThing = (Node2D)GetParent();
-    //Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
+    Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
-    //// TODO: deal with really long UUIDs
-    //playerIDLabel.Text = uuid;
+    // TODO: deal with really long UUIDs
+    playerIDLabel.Text = uuid;
   }
 
   /// <summary>
