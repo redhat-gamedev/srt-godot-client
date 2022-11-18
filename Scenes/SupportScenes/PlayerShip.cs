@@ -134,7 +134,7 @@ public class PlayerShip : KinematicBody2D
     MyMissile.AddToGroup("missiles");
 
     Node rootNode = GetNode<Node>("/root/");
-    rootNode.AddChild(MyMissile);
+    rootNode.CallDeferred("add_child", MyMissile);
     _serilogger.Debug("Added missile instance!");
   }
 

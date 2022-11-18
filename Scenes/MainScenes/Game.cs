@@ -54,12 +54,12 @@ public class Game : Node
     //else cslogger.Error("WTF - map canvas layer");
 
     serverConnection = new ServerConnection();
-    this.AddChild(serverConnection);
+    this.CallDeferred("add_child", serverConnection);
 
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     loginScreen.Visible = false;
-    this.AddChild(loginScreen);
+    this.CallDeferred("add_child", loginScreen);
     loginScreen.Visible = true;
 
     // TODO: check for server connection and do some retries if something is wrong
@@ -147,7 +147,7 @@ public class Game : Node
       newBlip.Texture = shipBlip;
       newBlip.Offset = new Vector2(finalX, finalY);
     
-      gameRadar.AddChild(newBlip);
+      gameRadar.CallDeferred("add_child", newBlip);
     }
   }
 
@@ -230,7 +230,7 @@ public class Game : Node
     shipInstance.uuid = uuid;
 
     _serilogger.Debug("Adding ship to scene tree");
-    AddChild(playerShipThingInstance);
+    CallDeferred("add_child", playerShipThingInstance);
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
     // where the server is using the ShipThing, this is using the PlayerShip. It may 
@@ -326,7 +326,7 @@ public class Game : Node
     missileInstance.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
     missileInstance.RotationDegrees = egeb.Angle;
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
-    AddChild(missileInstance);
+    CallDeferred("add_child", missileInstance);
 
     // just in case we need to use it later
     missileInstance.AddToGroup("missiles");
@@ -395,7 +395,7 @@ public class Game : Node
     missileInstance.Position = missileInstance.Position + offset;
 
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
-    AddChild(missileInstance);
+    CallDeferred("add_child", missileInstance);
 
     // Run the missile animation
     _serilogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
