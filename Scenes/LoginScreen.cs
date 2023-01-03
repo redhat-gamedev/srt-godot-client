@@ -25,6 +25,7 @@ public class LoginScreen : Control
   private void _on_JoinButton_button_up()
   {
     _serilogger.Information($"LoginScreen: trying to login as {textField.Text}");
+    MyGame.myUuid = textField.Text;
 
     //EmitSignal("SetPlayerName", textField.Text);
     bool success = MyGame.JoinGameAsPlayer(textField.Text);
@@ -35,7 +36,6 @@ public class LoginScreen : Control
     }
     else
     {
-      MyGame.myUuid = textField.Text;
       // since we successfully joined the game, we can remove this node
       // which is the login screen. removing the login screen "displays"
       // the main game window

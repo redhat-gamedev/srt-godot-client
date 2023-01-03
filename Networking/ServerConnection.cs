@@ -32,16 +32,6 @@ public class ServerConnection : Node
   ReceiverLink securityOutReceiver;
   public static readonly string UUID = System.Guid.NewGuid().ToString();
 
-  // Ugh - seems like we can't seralize protbuf classes via signals so this might not work
-  //[Signal]
-  //public delegate void CreatePlayerGameEvent();
-  //[Signal]
-  //public delegate void CreateMissleGameEvent();
-  //[Signal]
-  //public delegate void UpdatePlayerGameEvent();
-  //[Signal]
-  //public delegate void UpdateMissleGameEvent();
-
   public override void _Ready()
   {
     MyGame = GetNode<Game>("/root/Game");
@@ -282,15 +272,13 @@ public class ServerConnection : Node
           switch (egeb.game_object_type)
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Information("ServerConnection.cs: Got create for a ship");
-              PlayerShip newShip = MyGame.CreateShipForUUID(egeb.Uuid);
-              newShip.UpdateFromGameEventBuffer(egeb);
+              _serilogger.Information($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
+              MyGame.PlayerCreateQueue.Enqueue(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Information("ServerConnection.cs: Got create for a missile");
-              SpaceMissile newMissile = MyGame.CreateMissileForUUID(egeb);
-              newMissile.UpdateFromGameEventBuffer(egeb);
+              _serilogger.Information($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileCreateQueue.Enqueue(egeb);
               break;
           }
           break;
@@ -302,12 +290,12 @@ public class ServerConnection : Node
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
               _serilogger.Information($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
-              MyGame.DestroyShipWithUUID(egeb.Uuid);
+              MyGame.PlayerDestroyQueue.Enqueue(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Information($"ServerConnection.cs: Got destroy for missile {egeb.Uuid}");
-              MyGame.DestroyMissileWithUUID(egeb.Uuid);
+              _serilogger.Information($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileDestroyQueue.Enqueue(egeb);
               break;
 
           }
@@ -330,15 +318,13 @@ public class ServerConnection : Node
           switch (egeb.game_object_type)
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Verbose("ServerConnection.cs: Got update for player");
-              PlayerShip ship = MyGame.UpdateShipWithUUID(egeb.Uuid);
-              ship.UpdateFromGameEventBuffer(egeb);
+              _serilogger.Verbose($"ServerConnection.cs: Got update for player {egeb.Uuid}");
+              MyGame.PlayerUpdateQueue.Enqueue(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Verbose("ServerConnection.cs: Got update for missile");
-              SpaceMissile missile = MyGame.UpdateMissileWithUUID(egeb);
-              missile.UpdateFromGameEventBuffer(egeb);
+              _serilogger.Verbose($"ServerConnection.cs: Got update for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileUpdateQueue.Enqueue(egeb);
               break;
           }
           break;
