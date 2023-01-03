@@ -87,6 +87,7 @@ public class PlayerShip : KinematicBody2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
+    _serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
     this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
     this.RotationDegrees = egeb.Angle;
     this.CurrentVelocity = egeb.AbsoluteVelocity;

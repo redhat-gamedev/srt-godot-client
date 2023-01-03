@@ -54,12 +54,12 @@ public class Game : Node
     //else cslogger.Error("WTF - map canvas layer");
 
     serverConnection = new ServerConnection();
-    this.CallDeferred("add_child", serverConnection);
+    this.AddChild(serverConnection);
 
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     loginScreen.Visible = false;
-    this.CallDeferred("add_child", loginScreen);
+    this.AddChild(loginScreen);
     loginScreen.Visible = true;
 
     // TODO: check for server connection and do some retries if something is wrong
@@ -123,7 +123,7 @@ public class Game : Node
       PlayerShip playerShip = entry.Value;
 
       // don't draw ourselves
-      if (player == myUuid) return;
+      if (player == myUuid) continue;
 
       _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
 
@@ -147,7 +147,7 @@ public class Game : Node
       newBlip.Texture = shipBlip;
       newBlip.Offset = new Vector2(finalX, finalY);
     
-      gameRadar.CallDeferred("add_child", newBlip);
+      gameRadar.AddChild(newBlip);
     }
   }
 
@@ -181,7 +181,7 @@ public class Game : Node
       if (radarRefreshTimer >= radarRefreshTime)
       { 
         radarRefreshTimer = 0;
-        _serilogger.Debug($"Game.cs: Updating radar");
+        _serilogger.Verbose($"Game.cs: Updating radar");
         updateGameRadar();
       }
     }
@@ -223,14 +223,14 @@ public class Game : Node
   /// <returns>the created ship instance</returns>
   public PlayerShip CreateShipForUUID(string uuid)
   {
-    _serilogger.Debug("CreateShipForUUID: " + uuid);
+    _serilogger.Debug("Game.cs: CreateShipForUUID: " + uuid);
     // TODO: check to ensure it doesn't already exist
     Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
     PlayerShip shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
     shipInstance.uuid = uuid;
 
-    _serilogger.Debug("Adding ship to scene tree");
-    CallDeferred("add_child", playerShipThingInstance);
+    _serilogger.Debug("Game.cs: Adding ship to scene tree");
+    AddChild(playerShipThingInstance);
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
     // where the server is using the ShipThing, this is using the PlayerShip. It may 
@@ -239,7 +239,7 @@ public class Game : Node
 
     // check if our UUID is set -- would be set after join, but it's possible
     // we are receiving messages and creates, etc. before we have joined
-    if (myUuid != null)
+    if (myUuid != null && inGame == true)
     {
       // the ship we just added is myship
       myShip = shipInstance;
@@ -260,6 +260,7 @@ public class Game : Node
   // TODO: wouldn't it be more appropriate to call this GetShipFromUUID ? since we're fetching the ship.
   public PlayerShip UpdateShipWithUUID(string uuid)
   {
+    _serilogger.Verbose("Game.cs: UpdateShipWithUUID");
     PlayerShip shipInstance;
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
@@ -326,7 +327,7 @@ public class Game : Node
     missileInstance.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
     missileInstance.RotationDegrees = egeb.Angle;
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
-    CallDeferred("add_child", missileInstance);
+    AddChild(missileInstance);
 
     // just in case we need to use it later
     missileInstance.AddToGroup("missiles");
@@ -395,7 +396,7 @@ public class Game : Node
     missileInstance.Position = missileInstance.Position + offset;
 
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
-    CallDeferred("add_child", missileInstance);
+    AddChild(missileInstance);
 
     // Run the missile animation
     _serilogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
