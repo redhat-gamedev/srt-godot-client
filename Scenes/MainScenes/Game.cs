@@ -43,6 +43,14 @@ public class Game : Node
 
   public String myUuid = null;
 
+  // Queues for processing incoming messages
+  public Queue<GameEvent> PlayerCreateQueue = new Queue<GameEvent>();
+  public Queue<GameEvent> PlayerUpdateQueue = new Queue<GameEvent>();
+  public Queue<GameEvent> PlayerDestroyQueue = new Queue<GameEvent>();
+  public Queue<GameEvent> MissileCreateQueue = new Queue<GameEvent>();
+  public Queue<GameEvent> MissileUpdateQueue = new Queue<GameEvent>();
+  public Queue<GameEvent> MissileDestroyQueue = new Queue<GameEvent>();
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
@@ -151,8 +159,73 @@ public class Game : Node
     }
   }
 
+  void ProcessPlayerCreate() {
+    while (PlayerCreateQueue.Count > 0)
+    {
+      GameEvent ge = PlayerCreateQueue.Dequeue();
+      _serilogger.Debug($"Game.cs: Dequeuing player create message for {ge.Uuid}");
+      PlayerShip newShip = CreateShipForUUID(ge.Uuid);
+      newShip.UpdateFromGameEventBuffer(ge);
+    }
+  }
+
+  void ProcessPlayerUpdate() {
+    while (PlayerUpdateQueue.Count > 0)
+    {
+      GameEvent ge = PlayerUpdateQueue.Dequeue();
+      _serilogger.Verbose($"Game.cs: Dequeuing player update message for {ge.Uuid}");
+      PlayerShip ship = UpdateShipWithUUID(ge.Uuid);
+      ship.UpdateFromGameEventBuffer(ge);
+    }
+  }
+
+  void ProcessPlayerDestroy() {
+    while (PlayerDestroyQueue.Count > 0)
+    {
+      GameEvent ge = PlayerDestroyQueue.Dequeue();
+      _serilogger.Debug($"Game.cs: Dequeuing player destroy message for {ge.Uuid}");
+      DestroyShipWithUUID(ge.Uuid);
+    }
+  }
+
+  void ProcessMissileCreate() {
+    while (MissileCreateQueue.Count > 0)
+    {
+      GameEvent ge = MissileCreateQueue.Dequeue();
+      _serilogger.Debug($"Game.cs: Dequeuing missile create message for {ge.Uuid} owner {ge.OwnerUuid}");
+      SpaceMissile newMissile = CreateMissileForUUID(ge);
+      newMissile.UpdateFromGameEventBuffer(ge);
+    }
+  }
+
+  void ProcessMissileUpdate() {
+    while (MissileUpdateQueue.Count > 0)
+    {
+      GameEvent ge = MissileUpdateQueue.Dequeue();
+      _serilogger.Verbose($"Game.cs: Dequeuing missile update message for {ge.Uuid} owner {ge.OwnerUuid}");
+      SpaceMissile missile = UpdateMissileWithUUID(ge);
+      missile.UpdateFromGameEventBuffer(ge);
+    }
+  }
+
+  void ProcessMissileDestroy() {
+    while (MissileDestroyQueue.Count > 0)
+    {
+      GameEvent ge = MissileDestroyQueue.Dequeue();
+      _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for {ge.Uuid} owner {ge.OwnerUuid}");
+      DestroyMissileWithUUID(ge.Uuid);
+    }
+  }
+
   public override void _Process(float delta)
   {
+
+    // we may eventually need to throw away some of these if the FPS starts slowing
+    ProcessPlayerCreate();
+    ProcessPlayerUpdate();
+    ProcessMissileCreate();
+    ProcessMissileUpdate();
+    ProcessMissileDestroy();
 
     var velocity = Vector2.Zero; // The player's movement direction.
     var shoot = Vector2.Zero; // the player's shoot status
@@ -185,6 +258,8 @@ public class Game : Node
         updateGameRadar();
       }
     }
+
+    ProcessPlayerDestroy();
   }
 
   public bool JoinGameAsPlayer(string playerName)
@@ -225,13 +300,19 @@ public class Game : Node
   {
     _serilogger.Debug("Game.cs: CreateShipForUUID: " + uuid);
     // TODO: check to ensure it doesn't already exist
-    Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
-    PlayerShip shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
-    shipInstance.uuid = uuid;
 
-    _serilogger.Debug("Game.cs: Adding ship to scene tree");
-    AddChild(playerShipThingInstance);
+    PlayerShip shipInstance;
 
+    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    {
+      Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
+      shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
+      shipInstance.uuid = uuid;
+
+      _serilogger.Debug("Game.cs: Adding ship to scene tree");
+      AddChild(playerShipThingInstance);
+    } else return shipInstance;
+    
     // TODO: this is inconsistent with the way the server uses the playerObjects array
     // where the server is using the ShipThing, this is using the PlayerShip. It may 
     // or may not be significant down the line
@@ -282,6 +363,9 @@ public class Game : Node
     if (playerObjects.TryGetValue(uuid, out shipInstance))
     {
       playerObjects.Remove(uuid);
+      // TODO: investigate whether the queuefree needs to move into the instance of the object
+      //       to prevent weird errors when we try to update a nonexistent object
+
       // need to free the parent of the ship, which is the "shipthing"
       shipInstance.GetParent().QueueFree();
     }
