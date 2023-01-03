@@ -318,6 +318,8 @@ public class ServerConnection : Node
           break;
 
         case GameEvent.GameEventType.GameEventTypeUpdate:
+          _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
+
           // find/update the Node2D
           if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
           {
@@ -328,11 +330,13 @@ public class ServerConnection : Node
           switch (egeb.game_object_type)
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
+              _serilogger.Verbose("ServerConnection.cs: Got update for player");
               PlayerShip ship = MyGame.UpdateShipWithUUID(egeb.Uuid);
               ship.UpdateFromGameEventBuffer(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
+              _serilogger.Verbose("ServerConnection.cs: Got update for missile");
               SpaceMissile missile = MyGame.UpdateMissileWithUUID(egeb);
               missile.UpdateFromGameEventBuffer(egeb);
               break;
