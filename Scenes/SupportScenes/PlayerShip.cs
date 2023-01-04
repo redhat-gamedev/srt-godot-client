@@ -21,11 +21,11 @@ public class PlayerShip : KinematicBody2D
 
   public int HitPoints = 100;
 
-  int MissileSpeed = 300;
+  public int MissileSpeed = 300;
 
-  float MissileLife = 4;
+  public float MissileLife = 4;
 
-  int MissileDamage = 25;
+  public int MissileDamage = 25;
 
   // the reload time is the minimum time between missile firings
   // relevant when two players are very close to one another and
