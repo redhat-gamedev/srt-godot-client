@@ -37,6 +37,7 @@ public class ServerConnection : Node
     MyGame = GetNode<Game>("/root/Game");
     _serilogger = MyGame._serilogger;
 
+    // TODO: move config to its own method
     var clientConfig = new ConfigFile();
     Godot.Error err; 
 
@@ -63,6 +64,7 @@ public class ServerConnection : Node
     }
 
     InitializeAMQP();
+
   }
 
   public void RemovePlayerSelf()
@@ -93,7 +95,7 @@ public class ServerConnection : Node
 
   private void SecurityReceived(IReceiverLink receiver, Message message)
   {
-    _serilogger.Verbose("ServerConnection.cs: Security Event received!");
+    _serilogger.Debug("ServerConnection.cs: Security Event received!");
     try
     {
       receiver.Accept(message);
@@ -169,6 +171,8 @@ public class ServerConnection : Node
       factory = new ConnectionFactory();
       _serilogger.Debug("ServerConnection.cs: connecting to " + url);
       Address address = new Address(url);
+
+      // TODO: does this need to be async? it causes some issues
       amqpConnection = await factory.CreateAsync(address);
       amqpSession = new Session(amqpConnection);
     }
@@ -220,6 +224,13 @@ public class ServerConnection : Node
     securitySender = new SenderLink(amqpSession, linkid, securityInTarget, null);
 
     _serilogger.Debug("ServerConnection.cs: Finished initializing AMQP connection");
+
+    // send announce message
+    _serilogger.Debug($"ServerConnection.cs: Sending announce message for our client: {UUID}");
+    Security announceMessage = new Security();
+    announceMessage.Uuid = UUID;
+    announceMessage.security_type = Security.SecurityType.SecurityTypeAnnounce;
+    SendSecurity(announceMessage);
   }
 
   private void ProcessSecurity(Security security)
@@ -229,8 +240,13 @@ public class ServerConnection : Node
       switch (security.security_type)
       {
         case Security.SecurityType.SecurityTypeAnnounce:
-          _serilogger.Debug($"ServerConnection.cs: Client {security.Uuid} announced");
-          // TODO: handle announce stuff
+          _serilogger.Debug($"ServerConnection.cs: Received announce for {security.Uuid}");
+
+          // check if the received announce matches our ServerConnection UUID
+          if (security.Uuid == UUID) {
+            _serilogger.Debug("ServerConnection.cs: Received announce message matches our UUID, processing");
+            MyGame.ProcessAnnounce(security);
+          }
           break;
         case Security.SecurityType.SecurityTypeJoin:
           // TODO: do something fancy because a player joined

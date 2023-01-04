@@ -52,6 +52,19 @@ public class Game : Node
   public Queue<GameEvent> MissileUpdateQueue = new Queue<GameEvent>();
   public Queue<GameEvent> MissileDestroyQueue = new Queue<GameEvent>();
 
+  /* PLAYER DEFAULTS AND CONFIG */
+
+  float PlayerDefaultThrust = 1f;
+  float PlayerDefaultMaxSpeed = 5;
+  float PlayerDefaultRotationThrust = 1.5f;
+  int PlayerDefaultHitPoints = 100;
+  int PlayerDefaultMissileSpeed = 300;
+  float PlayerDefaultMissileLife = 2;
+  int PlayerDefaultMissileDamage = 25;
+  int PlayerDefaultMissileReloadTime = 2;
+
+  /* END PLAYER DEFAULTS AND CONFIG */
+
   public void LoadConfig()
   {
     _serilogger.Information("Game.cs: Configuring");
@@ -274,6 +287,29 @@ public class Game : Node
     }
   }
 
+  public void ProcessAnnounce(Security security)
+  {
+    _serilogger.Debug($"Game.cs: Processing received announce message for {security.Uuid}");
+
+    PlayerDefaultThrust = (float) security.ShipThrust;
+    PlayerDefaultMaxSpeed = (float) security.MaxSpeed;
+    PlayerDefaultRotationThrust = (float) security.RotationThrust;
+    PlayerDefaultHitPoints = (int) security.HitPoints;
+    PlayerDefaultMissileSpeed = (int) security.MissileSpeed;
+    PlayerDefaultMissileLife = (float) security.MissileLife;
+    PlayerDefaultMissileDamage = (int) security.MissileDamage;
+    PlayerDefaultMissileReloadTime = (int) security.MissileReload;
+
+    _serilogger.Debug($"Game.cs: Player Thrust:       {PlayerDefaultThrust}");
+    _serilogger.Debug($"Game.cs: Player Speed:        {PlayerDefaultMaxSpeed}");
+    _serilogger.Debug($"Game.cs: Player Rotation:     {PlayerDefaultRotationThrust}");
+    _serilogger.Debug($"Game.cs: Player HP:           {PlayerDefaultHitPoints}");
+    _serilogger.Debug($"Game.cs: Missile Speed:       {PlayerDefaultMissileSpeed}");
+    _serilogger.Debug($"Game.cs: Missile Life:        {PlayerDefaultMissileLife}");
+    _serilogger.Debug($"Game.cs: Missile Damage:      {PlayerDefaultMissileDamage}");
+    _serilogger.Debug($"Game.cs: Missile Reload Time: {PlayerDefaultMissileReloadTime}");  
+  }
+
   public override void _Process(float delta)
   {
 
@@ -360,11 +396,27 @@ public class Game : Node
 
     PlayerShip shipInstance;
 
+    // TODO: we might need to do something in the case where we end up creating ships before the announce message
+    //       has been processed. Right now the code will create a ship as soon as it receives an update for a ship
+    //       it doesn't know about, but that could happen before we've received the announce. It's nice to 
+    //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on 
+    //       joining
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
+      // we didn't find a matching ship in the playerObjects dictionary, so create a new instance
       Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
       shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
       shipInstance.uuid = uuid;
+
+      // set the instance defaults to match what we learned from the announce
+      _serilogger.Debug("Game.cs: Setting ship instance starting values to defaults");
+      shipInstance.Thrust = PlayerDefaultThrust;
+      shipInstance.MaxSpeed = PlayerDefaultMaxSpeed;
+      shipInstance.RotationThrust = PlayerDefaultRotationThrust;
+      shipInstance.HitPoints = PlayerDefaultHitPoints;
+      shipInstance.MissileSpeed = PlayerDefaultMissileSpeed;
+      shipInstance.MissileLife = PlayerDefaultMissileLife;
+      shipInstance.MissileDamage = PlayerDefaultMissileDamage;
 
       _serilogger.Debug("Game.cs: Adding ship to scene tree");
       AddChild(playerShipThingInstance);
