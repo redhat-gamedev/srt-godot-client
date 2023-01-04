@@ -8,7 +8,8 @@ using Serilog;
 // This class is autoloaded
 public class Game : Node
 {
-  public Serilog.Core.Logger _serilogger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Console().CreateLogger();  
+  Serilog.Core.LoggingLevelSwitch levelSwitch = new Serilog.Core.LoggingLevelSwitch();
+  public Serilog.Core.Logger _serilogger;
   
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
@@ -51,18 +52,74 @@ public class Game : Node
   public Queue<GameEvent> MissileUpdateQueue = new Queue<GameEvent>();
   public Queue<GameEvent> MissileDestroyQueue = new Queue<GameEvent>();
 
+  public void LoadConfig()
+  {
+    _serilogger.Information("Game.cs: Configuring");
+
+    var clientConfig = new ConfigFile();
+    // save the config file load status to err to check which value to use (config or env) later
+    Error err = clientConfig.Load("Resources/client.cfg");
+
+    int DesiredLogLevel = 3;
+
+    // if the file was loaded successfully, read the vars
+    if (err == Error.Ok) 
+    {
+      DesiredLogLevel = (int) clientConfig.GetValue("game", "log_level");
+    }
+
+    // pull values from env -- will get nulls if any vars are not set
+    String envLogLevel = System.Environment.GetEnvironmentVariable("SRT_LOG_LEVEL");
+
+    // override any loaded config with env
+    if (envLogLevel != null) DesiredLogLevel = int.Parse(envLogLevel);
+
+    switch (DesiredLogLevel) 
+    {
+      case 0:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Fatal");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Fatal;
+        break;
+      case 1:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Error");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Error;
+        break;
+      case 2:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Warning");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Warning;
+        break;
+      case 3:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Information");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
+        break;
+      case 4:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Debug");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Debug;
+        break;
+      case 5:
+        _serilogger.Information("Game.cs: Setting minimum log level to: Verbose");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Verbose;
+        break;
+      default:
+        _serilogger.Information("Game.cs: Unknown log level specified, defaulting to: Information");
+        levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Debug;
+        break;
+    }
+
+  }
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
     GameStopwatch.Start();
+    levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
+    _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
-
-    //canvasLayer = GetNode<CanvasLayer>("MapCanvasLayer");
-    //if (canvasLayer != null) mapOverlay = canvasLayer.GetNode<Control>("MapOverlay");
-    //else cslogger.Error("WTF - map canvas layer");
 
     serverConnection = new ServerConnection();
     this.AddChild(serverConnection);
+
+    LoadConfig();
 
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedLoginScene.Instance();
