@@ -57,7 +57,7 @@ public class Game : Node
   float PlayerDefaultThrust = 1f;
   float PlayerDefaultMaxSpeed = 5;
   float PlayerDefaultRotationThrust = 1.5f;
-  int PlayerDefaultHitPoints = 100;
+  public int PlayerDefaultHitPoints = 100;
   int PlayerDefaultMissileSpeed = 300;
   float PlayerDefaultMissileLife = 2;
   int PlayerDefaultMissileDamage = 25;

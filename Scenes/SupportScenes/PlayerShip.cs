@@ -45,6 +45,8 @@ public class PlayerShip : KinematicBody2D
 
   Node2D shipThing;
 
+  Sprite hitPointRing;
+
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
   /// </summary>
@@ -55,6 +57,8 @@ public class PlayerShip : KinematicBody2D
 
     shipThing = (Node2D)GetParent();
     Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
+
+    hitPointRing = (Sprite)GetNode("HitPointShader");
 
     // TODO: deal with really long UUIDs
     playerIDLabel.Text = uuid;
@@ -88,9 +92,10 @@ public class PlayerShip : KinematicBody2D
   public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
     _serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
-    this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    this.RotationDegrees = egeb.Angle;
-    this.CurrentVelocity = egeb.AbsoluteVelocity;
+    GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+    RotationDegrees = egeb.Angle;
+    CurrentVelocity = egeb.AbsoluteVelocity;
+    HitPoints = egeb.HitPoints;
   }
 
   /// <summary>
@@ -163,9 +168,21 @@ public class PlayerShip : KinematicBody2D
     }
   }
 
+  void UpdateHitPointRing()
+  {
+    float hitPointRatio = (float)HitPoints / (float)MyGame.PlayerDefaultHitPoints;
+    _serilogger.Verbose($"PlayerShip.cs: hitpoints is {HitPoints} for UUID {uuid}");
+    _serilogger.Debug($"PlayerShip.cs: hitpoint ratio {hitPointRatio} for UUID {uuid}");
+
+    ShaderMaterial ringShader = (ShaderMaterial)hitPointRing.Material;
+    ringShader.SetShaderParam("fill_ratio", hitPointRatio);
+    _serilogger.Debug($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
+  }
+
   public override void _Process(float delta)
   {
     CheckMissileReload(delta);
+    UpdateHitPointRing();
   }
 
 }
