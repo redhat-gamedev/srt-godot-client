@@ -114,3 +114,5 @@ texture = ExtResource( 3 )
 
 [node name="ExplodeSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
 stream = ExtResource( 5 )
+
+[connection signal="finished" from="PlayerShip/ExplodeSound" to="PlayerShip" method="_on_ExplodeSound_finished"]

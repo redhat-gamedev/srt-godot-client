@@ -284,33 +284,33 @@ public class ServerConnection : Node
       switch (egeb.game_event_type)
       {
         case GameEvent.GameEventType.GameEventTypeCreate:
-          _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [create]");
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [create]");
           switch (egeb.game_object_type)
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Information($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
+              _serilogger.Debug($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
               MyGame.PlayerCreateQueue.Enqueue(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Information($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              _serilogger.Debug($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
               MyGame.MissileCreateQueue.Enqueue(egeb);
               break;
           }
           break;
 
         case GameEvent.GameEventType.GameEventTypeDestroy:
-          _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [destroy]");
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [destroy]");
 
           switch (egeb.game_object_type)
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Information($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
+              _serilogger.Debug($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
               MyGame.PlayerDestroyQueue.Enqueue(egeb);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Information($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
               MyGame.MissileDestroyQueue.Enqueue(egeb);
               break;
 
@@ -318,7 +318,7 @@ public class ServerConnection : Node
           break;
 
         case GameEvent.GameEventType.GameEventTypeRetrieve:
-          _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
           break;
 
         case GameEvent.GameEventType.GameEventTypeUpdate:
@@ -346,7 +346,7 @@ public class ServerConnection : Node
           break;
 
         default:
-          _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer type:[?????], IGNORING...");
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer type:[?????], IGNORING...");
           break;
       }
     }
