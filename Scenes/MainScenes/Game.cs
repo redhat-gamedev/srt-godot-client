@@ -126,6 +126,7 @@ public class Game : Node
   {
     GameStopwatch.Start();
     levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
+
     _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
 
@@ -254,7 +255,7 @@ public class Game : Node
     {
       GameEvent ge = PlayerDestroyQueue.Dequeue();
       _serilogger.Debug($"Game.cs: Dequeuing player destroy message for {ge.Uuid}");
-      DestroyShipWithUUID(ge.Uuid);
+      DestroyShipWithUUID(ge.Uuid, ge.HitPoints);
     }
   }
 
@@ -435,8 +436,10 @@ public class Game : Node
       myShip = shipInstance;
       Node2D playerForCamera = playerObjects[myUuid];
       Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
+      Listener2D theListener = playerForCamera.GetNode<Listener2D>("Listener2D");
 
       if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+      if (!theListener.IsCurrent()) { theListener.MakeCurrent(); }
     }
 
     return shipInstance;
@@ -464,19 +467,24 @@ public class Game : Node
   /// <summary>Called when a ship destroy message is received</summary>
   /// <param name="uuid"></param>
   /// <returns>nothing</returns>
-  public void DestroyShipWithUUID(string uuid)
+  public void DestroyShipWithUUID(string uuid, int hitPoints)
   {
     PlayerShip shipInstance;
 
     // if we don't find anything, do nothing, since there's nothing displayed yet to remove
     if (playerObjects.TryGetValue(uuid, out shipInstance))
     {
+      _serilogger.Debug($"Game.cs: checking hitpoints for {uuid}");
+      if (hitPoints <= 0)
+      {
+        _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
+        shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
+      }
+
       playerObjects.Remove(uuid);
       // TODO: investigate whether the queuefree needs to move into the instance of the object
       //       to prevent weird errors when we try to update a nonexistent object
 
-      // need to free the parent of the ship, which is the "shipthing"
-      shipInstance.GetParent().QueueFree();
     }
   }
 
@@ -521,6 +529,7 @@ public class Game : Node
     missileInstance.RotationDegrees = egeb.Angle;
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
     AddChild(missileInstance);
+    //missileInstance.GetNode<AudioStreamPlayer>("FireSound").Play();
 
     // just in case we need to use it later
     missileInstance.AddToGroup("missiles");
