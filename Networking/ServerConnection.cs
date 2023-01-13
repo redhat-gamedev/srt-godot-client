@@ -162,14 +162,14 @@ public class ServerConnection : Node
   {
     String linkid;
 
-    _serilogger.Debug("ServerConnection.cs: Initializing AMQP connection");
+    _serilogger.Information("ServerConnection.cs: Initializing AMQP connection");
     Connection.DisableServerCertValidation = disableCertValidation;
     try
     {
       //Trace.TraceLevel = TraceLevel.Frame;
       //Trace.TraceListener = (l, f, a) => Console.WriteLine(DateTime.Now.ToString("[hh:mm:ss.fff]") + " " + string.Format(f, a));
       factory = new ConnectionFactory();
-      _serilogger.Debug("ServerConnection.cs: connecting to " + url);
+      _serilogger.Information("ServerConnection.cs: connecting to " + url);
       Address address = new Address(url);
 
       // TODO: does this need to be async? it causes some issues
