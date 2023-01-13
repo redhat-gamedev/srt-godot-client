@@ -45,6 +45,7 @@ public class SpaceMissile : Area2D
     missileAnimation.Stop();
     missileAnimation.Frame = 0;
     missileExplosion.Play();
+    GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
 
     if (MyPlayer != null) MyPlayer.MyMissile = null;
   }
@@ -60,6 +61,7 @@ public class SpaceMissile : Area2D
 
     missileAnimation = GetNode<AnimatedSprite>("Animations");
     missileExplosion = GetNode<AnimatedSprite>("Explosion");
+    //GetNode<AudioStreamPlayer>("FireSound").Play();
   }
 
   public override void _Process(float delta)

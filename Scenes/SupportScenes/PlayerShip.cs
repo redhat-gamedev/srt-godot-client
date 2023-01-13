@@ -172,17 +172,24 @@ public class PlayerShip : KinematicBody2D
   {
     float hitPointRatio = (float)HitPoints / (float)MyGame.PlayerDefaultHitPoints;
     _serilogger.Verbose($"PlayerShip.cs: hitpoints is {HitPoints} for UUID {uuid}");
-    _serilogger.Debug($"PlayerShip.cs: hitpoint ratio {hitPointRatio} for UUID {uuid}");
+    _serilogger.Verbose($"PlayerShip.cs: hitpoint ratio {hitPointRatio} for UUID {uuid}");
 
     ShaderMaterial ringShader = (ShaderMaterial)hitPointRing.Material;
     ringShader.SetShaderParam("fill_ratio", hitPointRatio);
-    _serilogger.Debug($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
+    _serilogger.Verbose($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
   }
 
   public override void _Process(float delta)
   {
     CheckMissileReload(delta);
     UpdateHitPointRing();
+  }
+
+  void _on_ExplodeSound_finished()
+  {
+    _serilogger.Debug($"PlayerShip.cs: Explosion sound finished - freeing queue");
+    // need to free the parent of the ship, which is the "shipthing"
+    GetParent().QueueFree();
   }
 
 }
