@@ -174,6 +174,25 @@ public class Game : Node
     gameUI.GetNode<TextureRect>("RadarReticle").Show();
   }
 
+  // called to update camera and 2d listener for audio
+  void updateWhoAmI()
+  {
+    // check if our UUID is set -- would be set after join, but it's possible
+    // we are receiving messages and creates, etc. before we have joined
+    if (myUuid != null && inGame == true)
+    {
+      // check if our uuid is in the playership dict
+      if (playerObjects.TryGetValue(myUuid, out myShip))
+      {
+        Node2D playerForCamera = myShip;
+        Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
+        Listener2D theListener = playerForCamera.GetNode<Listener2D>("Listener2D");
+
+        if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+        if (!theListener.IsCurrent()) { theListener.MakeCurrent(); }
+      }
+    }
+  }
   void updateGameUI()
   {
     // update the speedometer for our player
@@ -203,13 +222,14 @@ public class Game : Node
 
       // don't draw ourselves
       if (player == myUuid) continue;
+      _serilogger.Debug($"Game.cs: Drawing radar dot for {player}");
 
-      _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
+      _serilogger.Debug($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
 
       float deltaX = myShip.Position.x - playerShip.Position.x;
       float deltaY = myShip.Position.y - playerShip.Position.y;
 
-      _serilogger.Verbose($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
+      _serilogger.Debug($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
 
       // scale the relative position where 10,000 is the edge of the radar circle
       float scaledX = (deltaX / 10000) * (280 / 2);
@@ -219,7 +239,7 @@ public class Game : Node
       float finalX = (scaledX * -1) + 169;
       float finalY = (scaledY * -1) + 215;
 
-      _serilogger.Verbose($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
+      _serilogger.Debug($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
 
       // add a blip at the scaled location offset from the center
       Sprite newBlip = new Sprite();
@@ -313,6 +333,7 @@ public class Game : Node
 
   public override void _Process(float delta)
   {
+    updateWhoAmI();
 
     // we may eventually need to throw away some of these if the FPS starts slowing
     ProcessPlayerCreate();
@@ -337,7 +358,10 @@ public class Game : Node
       if (Input.IsActionPressed("fire")) shoot.y = 1;
       if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
 
-      if (myShip != null) updateGameUI();
+      if (myShip != null) 
+      {
+        updateGameUI();
+      }
 
       // https://gdscript.com/solutions/godot-timing-tutorial/
       // check if we should update the debug UI, which itself should only be done if 
@@ -348,7 +372,7 @@ public class Game : Node
       if (radarRefreshTimer >= radarRefreshTime)
       { 
         radarRefreshTimer = 0;
-        _serilogger.Verbose($"Game.cs: Updating radar");
+        _serilogger.Debug($"Game.cs: Updating radar");
         updateGameRadar();
       }
     }
@@ -427,20 +451,6 @@ public class Game : Node
     // where the server is using the ShipThing, this is using the PlayerShip. It may 
     // or may not be significant down the line
     playerObjects.Add(uuid, shipInstance);
-
-    // check if our UUID is set -- would be set after join, but it's possible
-    // we are receiving messages and creates, etc. before we have joined
-    if (myUuid != null && inGame == true)
-    {
-      // the ship we just added is myship
-      myShip = shipInstance;
-      Node2D playerForCamera = playerObjects[myUuid];
-      Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
-      Listener2D theListener = playerForCamera.GetNode<Listener2D>("Listener2D");
-
-      if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
-      if (!theListener.IsCurrent()) { theListener.MakeCurrent(); }
-    }
 
     return shipInstance;
   }
