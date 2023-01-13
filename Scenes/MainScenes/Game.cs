@@ -70,8 +70,18 @@ public class Game : Node
     _serilogger.Information("Game.cs: Configuring");
 
     var clientConfig = new ConfigFile();
-    // save the config file load status to err to check which value to use (config or env) later
-    Error err = clientConfig.Load("Resources/client.cfg");
+
+    // try to load user preference config first
+    Error err = clientConfig.Load("user://client.cfg");
+    if (err != Error.Ok)
+    {
+      _serilogger.Information("Game.cs: Local user config not found, defaulting to built-in");
+    }
+    else
+    {
+      // save the config file load status to err to check which value to use (config or env) later
+      err = clientConfig.Load("Resources/client.cfg");
+    }
 
     int DesiredLogLevel = 3;
 
