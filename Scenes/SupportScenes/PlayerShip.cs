@@ -189,4 +189,11 @@ public class PlayerShip : KinematicBody2D
 	UpdateHitPointRing();
   }
 
+  void _on_ExplodeSound_finished()
+  {
+    _serilogger.Debug($"PlayerShip.cs: Explosion sound finished - freeing queue");
+    // need to free the parent of the ship, which is the "shipthing"
+    GetParent().QueueFree();
+  }
+
 }

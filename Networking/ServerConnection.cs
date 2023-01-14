@@ -160,77 +160,77 @@ public class ServerConnection : Node
 
   async void InitializeAMQP()
   {
-	String linkid;
+    String linkid;
 
-	_serilogger.Debug("ServerConnection.cs: Initializing AMQP connection");
-	Connection.DisableServerCertValidation = disableCertValidation;
-	try
-	{
-	  //Trace.TraceLevel = TraceLevel.Frame;
-	  //Trace.TraceListener = (l, f, a) => Console.WriteLine(DateTime.Now.ToString("[hh:mm:ss.fff]") + " " + string.Format(f, a));
-	  factory = new ConnectionFactory();
-	  _serilogger.Debug("ServerConnection.cs: connecting to " + url);
-	  Address address = new Address(url);
+    _serilogger.Information("ServerConnection.cs: Initializing AMQP connection");
+    Connection.DisableServerCertValidation = disableCertValidation;
+    try
+    {
+      //Trace.TraceLevel = TraceLevel.Frame;
+      //Trace.TraceListener = (l, f, a) => Console.WriteLine(DateTime.Now.ToString("[hh:mm:ss.fff]") + " " + string.Format(f, a));
+      factory = new ConnectionFactory();
+      _serilogger.Information("ServerConnection.cs: connecting to " + url);
+      Address address = new Address(url);
 
-	  // TODO: does this need to be async? it causes some issues
-	  amqpConnection = await factory.CreateAsync(address);
-	  amqpSession = new Session(amqpConnection);
-	}
-	catch (Exception ex)
-	{
-	  _serilogger.Error("ServerConnection.cs: AMQP connection/session failed for " + url);
-	  _serilogger.Error($"ServerConnection.cs: {ex.Message}");
-	  // TODO: let player know
-	  return;
-	}
+      // TODO: does this need to be async? it causes some issues
+      amqpConnection = await factory.CreateAsync(address);
+      amqpSession = new Session(amqpConnection);
+    }
+    catch (Exception ex)
+    {
+      _serilogger.Error("ServerConnection.cs: AMQP connection/session failed for " + url);
+      _serilogger.Error($"ServerConnection.cs: {ex.Message}");
+      // TODO: let player know
+      return;
+    }
 
-	// set up senders and receivers ////////////////////////////////////////////
-	linkid = "srt-game-client-command-receiver-" + UUID;
-	_serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for game events: " + linkid);
-	Source eventOutSource = new Source
-	{
-	  Address = gameEventsTopic,
-	  Capabilities = new Symbol[] { new Symbol("topic") }
-	};
-	gameEventsReceiver = new ReceiverLink(amqpSession, linkid, eventOutSource, null);
-	gameEventsReceiver.Start(10, GameEventReceived);
+    // set up senders and receivers ////////////////////////////////////////////
+    linkid = "srt-game-client-command-receiver-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for game events: " + linkid);
+    Source eventOutSource = new Source
+    {
+      Address = gameEventsTopic,
+      Capabilities = new Symbol[] { new Symbol("topic") }
+    };
+    gameEventsReceiver = new ReceiverLink(amqpSession, linkid, eventOutSource, null);
+    gameEventsReceiver.Start(10, GameEventReceived);
 
-	linkid = "srt-game-client-security-receiver-" + UUID;
-	_serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for security events: " + linkid);
-	Source securityOutSource = new Source
-	{
-	  Address = securityOutTopic,
-	  Capabilities = new Symbol[] { new Symbol("topic") }
-	};
-	securityOutReceiver = new ReceiverLink(amqpSession, linkid, securityOutSource, null);
-	securityOutReceiver.Start(10, SecurityReceived);
+    linkid = "srt-game-client-security-receiver-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ receiver for security events: " + linkid);
+    Source securityOutSource = new Source
+    {
+      Address = securityOutTopic,
+      Capabilities = new Symbol[] { new Symbol("topic") }
+    };
+    securityOutReceiver = new ReceiverLink(amqpSession, linkid, securityOutSource, null);
+    securityOutReceiver.Start(10, SecurityReceived);
 
-	linkid = "srt-game-client-command-sender-" + UUID;
-	_serilogger.Debug("ServerConnection.cs: Creating AMQ sender for player commands: " + linkid);
-	Target commandInTarget = new Target
-	{
-	  Address = commandsQueue,
-	  Capabilities = new Symbol[] { new Symbol("queue") }
-	};
-	commandsSender = new SenderLink(amqpSession, linkid, commandInTarget, null);
+    linkid = "srt-game-client-command-sender-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ sender for player commands: " + linkid);
+    Target commandInTarget = new Target
+    {
+      Address = commandsQueue,
+      Capabilities = new Symbol[] { new Symbol("queue") }
+    };
+    commandsSender = new SenderLink(amqpSession, linkid, commandInTarget, null);
 
-	linkid = "srt-game-security-sender-" + UUID;
-	_serilogger.Debug("ServerConnection.cs: Creating AMQ sender for security commands: " + linkid);
-	Target securityInTarget = new Target
-	{
-	  Address = securityQueue,
-	  Capabilities = new Symbol[] { new Symbol("queue") }
-	};
-	securitySender = new SenderLink(amqpSession, linkid, securityInTarget, null);
+    linkid = "srt-game-security-sender-" + UUID;
+    _serilogger.Debug("ServerConnection.cs: Creating AMQ sender for security commands: " + linkid);
+    Target securityInTarget = new Target
+    {
+      Address = securityQueue,
+      Capabilities = new Symbol[] { new Symbol("queue") }
+    };
+    securitySender = new SenderLink(amqpSession, linkid, securityInTarget, null);
 
-	_serilogger.Debug("ServerConnection.cs: Finished initializing AMQP connection");
+    _serilogger.Debug("ServerConnection.cs: Finished initializing AMQP connection");
 
-	// send announce message
-	_serilogger.Debug($"ServerConnection.cs: Sending announce message for our client: {UUID}");
-	Security announceMessage = new Security();
-	announceMessage.Uuid = UUID;
-	announceMessage.security_type = Security.SecurityType.SecurityTypeAnnounce;
-	SendSecurity(announceMessage);
+    // send announce message
+    _serilogger.Debug($"ServerConnection.cs: Sending announce message for our client: {UUID}");
+    Security announceMessage = new Security();
+    announceMessage.Uuid = UUID;
+    announceMessage.security_type = Security.SecurityType.SecurityTypeAnnounce;
+    SendSecurity(announceMessage);
   }
 
   private void ProcessSecurity(Security security)
@@ -279,83 +279,83 @@ public class ServerConnection : Node
   /// <param name="egeb"></param>
   private void ProcessGameEvent(GameEvent egeb)
   {
-	try
-	{
-	  switch (egeb.game_event_type)
-	  {
-		case GameEvent.GameEventType.GameEventTypeCreate:
-		  _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [create]");
-		  switch (egeb.game_object_type)
-		  {
-			case GameEvent.GameObjectType.GameObjectTypePlayer:
-			  _serilogger.Information($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
-			  MyGame.PlayerCreateQueue.Enqueue(egeb);
-			  break;
+    try
+    {
+      switch (egeb.game_event_type)
+      {
+        case GameEvent.GameEventType.GameEventTypeCreate:
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [create]");
+          switch (egeb.game_object_type)
+          {
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
+              _serilogger.Debug($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
+              MyGame.PlayerCreateQueue.Enqueue(egeb);
+              break;
 
-			case GameEvent.GameObjectType.GameObjectTypeMissile:
-			  _serilogger.Information($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-			  MyGame.MissileCreateQueue.Enqueue(egeb);
-			  break;
-		  }
-		  break;
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
+              _serilogger.Debug($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileCreateQueue.Enqueue(egeb);
+              break;
+          }
+          break;
 
-		case GameEvent.GameEventType.GameEventTypeDestroy:
-		  _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [destroy]");
+        case GameEvent.GameEventType.GameEventTypeDestroy:
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [destroy]");
 
-		  switch (egeb.game_object_type)
-		  {
-			case GameEvent.GameObjectType.GameObjectTypePlayer:
-			  _serilogger.Information($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
-			  MyGame.PlayerDestroyQueue.Enqueue(egeb);
-			  break;
+          switch (egeb.game_object_type)
+          {
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
+              _serilogger.Debug($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
+              MyGame.PlayerDestroyQueue.Enqueue(egeb);
+              break;
 
-			case GameEvent.GameObjectType.GameObjectTypeMissile:
-			  _serilogger.Information($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-			  MyGame.MissileDestroyQueue.Enqueue(egeb);
-			  break;
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
+              _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileDestroyQueue.Enqueue(egeb);
+              break;
 
-		  }
-		  break;
+          }
+          break;
 
-		case GameEvent.GameEventType.GameEventTypeRetrieve:
-		  _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
-		  break;
+        case GameEvent.GameEventType.GameEventTypeRetrieve:
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [retrieve]");
+          break;
 
-		case GameEvent.GameEventType.GameEventTypeUpdate:
-		  _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
+        case GameEvent.GameEventType.GameEventTypeUpdate:
+          _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
 
-		  // find/update the Node2D
-		  if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
-		  {
-			_serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
-			return;
-		  }
+          // find/update the Node2D
+          if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
+          {
+            _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
+            return;
+          }
 
-		  switch (egeb.game_object_type)
-		  {
-			case GameEvent.GameObjectType.GameObjectTypePlayer:
-			  _serilogger.Verbose($"ServerConnection.cs: Got update for player {egeb.Uuid}");
-			  MyGame.PlayerUpdateQueue.Enqueue(egeb);
-			  break;
+          switch (egeb.game_object_type)
+          {
+            case GameEvent.GameObjectType.GameObjectTypePlayer:
+              _serilogger.Verbose($"ServerConnection.cs: Got update for player {egeb.Uuid}");
+              MyGame.PlayerUpdateQueue.Enqueue(egeb);
+              break;
 
-			case GameEvent.GameObjectType.GameObjectTypeMissile:
-			  _serilogger.Verbose($"ServerConnection.cs: Got update for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-			  MyGame.MissileUpdateQueue.Enqueue(egeb);
-			  break;
-		  }
-		  break;
+            case GameEvent.GameObjectType.GameObjectTypeMissile:
+              _serilogger.Verbose($"ServerConnection.cs: Got update for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
+              MyGame.MissileUpdateQueue.Enqueue(egeb);
+              break;
+          }
+          break;
 
-		default:
-		  _serilogger.Information("ServerConnection.cs: EntityGameEventBuffer type:[?????], IGNORING...");
-		  break;
-	  }
-	}
-	catch (Exception ex)
-	{
-	  _serilogger.Error("ServerConnection.cs: Issue processing game event:");
-	  _serilogger.Error(ex.Message);
-	  return;
-	}
+        default:
+          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer type:[?????], IGNORING...");
+          break;
+      }
+    }
+    catch (Exception ex)
+    {
+      _serilogger.Error("ServerConnection.cs: Issue processing game event:");
+      _serilogger.Error(ex.Message);
+      return;
+    }
   }
 
   //  // Called every frame. 'delta' is the elapsed time since the previous frame.
