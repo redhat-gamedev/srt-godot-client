@@ -31,63 +31,63 @@ public class SpaceMissile : Area2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
-    _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    this.RotationDegrees = egeb.Angle;
+	_serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
+	this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+	this.RotationDegrees = egeb.Angle;
   }
 
   public void Expire()
   {
-    // stop the regular animation and play the explosion animation
-    _serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
-    GetNode<Sprite>("Sprite").Hide();
-    GetNode<AnimatedSprite>("Animations").Hide();
-    missileAnimation.Stop();
-    missileAnimation.Frame = 0;
-    missileExplosion.Play();
+	// stop the regular animation and play the explosion animation
+	_serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
+	GetNode<Sprite>("Sprite").Hide();
+	GetNode<AnimatedSprite>("Animations").Hide();
+	missileAnimation.Stop();
+	missileAnimation.Frame = 0;
+	missileExplosion.Play();
 
-    if (MyPlayer != null) MyPlayer.MyMissile = null;
+	if (MyPlayer != null) MyPlayer.MyMissile = null;
   }
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    MyGame = GetNode<Game>("/root/Game");
-    _serilogger = MyGame._serilogger;
+	MyGame = GetNode<Game>("/root/Game");
+	_serilogger = MyGame._serilogger;
 
-    // connect the hit signal to handling the hit
-    //Connect(nameof(Hit), this, "_HandleHit");
+	// connect the hit signal to handling the hit
+	//Connect(nameof(Hit), this, "_HandleHit");
 
-    missileAnimation = GetNode<AnimatedSprite>("Animations");
-    missileExplosion = GetNode<AnimatedSprite>("Explosion");
+	missileAnimation = GetNode<AnimatedSprite>("Animations");
+	missileExplosion = GetNode<AnimatedSprite>("Explosion");
   }
 
   public override void _Process(float delta)
   {
-    if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
-    {
-      missileAnimation.Frame = 0;
-      missileAnimation.Play("travel");
-    }
+	if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
+	{
+	  missileAnimation.Frame = 0;
+	  missileAnimation.Play("travel");
+	}
   }
 
   void _on_Explosion_animation_finished()
   {
-    _serilogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
-    // when the explosion animation finishes, remove the missile from the scene
-    QueueFree();
+	_serilogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
+	// when the explosion animation finishes, remove the missile from the scene
+	QueueFree();
   }
 
   public override void _PhysicsProcess(float delta)
   {
-    // TODO disable the collision shape until the missile is "away" from the ship
+	// TODO disable the collision shape until the missile is "away" from the ship
 
-    // create a new vector and rotate it by the current heading of the missile
-    // then move the missile in the direction of that vector
-    Vector2 velocity = new Vector2(0, -1);
-    velocity = velocity.Rotated(Rotation);
-    velocity = velocity * MissileSpeed * delta;
-    Position += velocity;
+	// create a new vector and rotate it by the current heading of the missile
+	// then move the missile in the direction of that vector
+	Vector2 velocity = new Vector2(0, -1);
+	velocity = velocity.Rotated(Rotation);
+	velocity = velocity * MissileSpeed * delta;
+	Position += velocity;
   }
 
   //void _onSpaceMissileBodyEntered(Node body)
