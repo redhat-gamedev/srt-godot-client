@@ -27,6 +27,8 @@ public class PlayerShip : KinematicBody2D
 
   public int MissileDamage = 25;
 
+  public string TravelState = "default";
+
   // the reload time is the minimum time between missile firings
   // relevant when two players are very close to one another and
   // prevents missile spamming
@@ -46,6 +48,8 @@ public class PlayerShip : KinematicBody2D
   Node2D shipThing;
 
   TextureProgress hitPointRing;
+  AnimationPlayer shipAnimator;
+  Label vectorLbl;
 
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
@@ -59,7 +63,9 @@ public class PlayerShip : KinematicBody2D
 	Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
 	hitPointRing = (TextureProgress)GetNode("HitPoints");
-
+	shipAnimator = (AnimationPlayer)GetNode("AnimationPlayer");
+	vectorLbl = (Label)GetParent().GetNode("Stat").GetNode("VectorLbl");
+	
 	// TODO: deal with really long UUIDs
 	playerIDLabel.Text = uuid;
   }
@@ -93,9 +99,45 @@ public class PlayerShip : KinematicBody2D
   {
 	_serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
 	GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+	UpdateShipAnimation(egeb.Angle, egeb.AbsoluteVelocity);
 	RotationDegrees = egeb.Angle;
 	CurrentVelocity = egeb.AbsoluteVelocity;
 	HitPoints = egeb.HitPoints;
+  }
+
+  void UpdateShipAnimation(float rot, float vel) {
+	bool turning = (RotationDegrees != rot);
+	bool leftturn = (RotationDegrees < rot);
+	bool rightturn = (RotationDegrees > rot);
+	bool straight = (RotationDegrees == rot);
+	bool still = (CurrentVelocity == 0 && vel == 0);
+	bool cruise = (CurrentVelocity > 0 && CurrentVelocity == vel);
+	bool thrust = (CurrentVelocity < vel);
+	bool brake = (!still && CurrentVelocity > vel);
+	bool stopping = (vel == 0);
+	string vectorState = "default";
+	// Increasing thrust
+	if(!shipAnimator.IsPlaying()) {
+		if (thrust && TravelState != "thrust") {
+			TravelState = "thrust";
+			shipAnimator.Play("thrust-straight");
+		} else if (!still && brake) {
+			if (!stopping && TravelState != "slow") {
+				TravelState = "slow";
+				shipAnimator.Play("slow-straight");
+			} else if (stopping && TravelState != "brake") {
+				TravelState = "brake";
+				shipAnimator.Play("brake-straight");
+			}
+		} else if (cruise) {
+			TravelState = "cruise";
+			shipAnimator.Play("full-straight");
+		} else if (still) {
+			TravelState = "default";
+			shipAnimator.Play("default");
+		}
+		vectorLbl.Text = TravelState;
+	}
   }
 
   /// <summary>
@@ -191,9 +233,9 @@ public class PlayerShip : KinematicBody2D
 
   void _on_ExplodeSound_finished()
   {
-    _serilogger.Debug($"PlayerShip.cs: Explosion sound finished - freeing queue");
-    // need to free the parent of the ship, which is the "shipthing"
-    GetParent().QueueFree();
+	_serilogger.Debug($"PlayerShip.cs: Explosion sound finished - freeing queue");
+	// need to free the parent of the ship, which is the "shipthing"
+	GetParent().QueueFree();
   }
 
 }

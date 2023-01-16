@@ -38,16 +38,16 @@ public class SpaceMissile : Area2D
 
   public void Expire()
   {
-    // stop the regular animation and play the explosion animation
-    _serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
-    GetNode<Sprite>("Sprite").Hide();
-    GetNode<AnimatedSprite>("Animations").Hide();
-    missileAnimation.Stop();
-    missileAnimation.Frame = 0;
-    missileExplosion.Play();
-    GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
+	// stop the regular animation and play the explosion animation
+	_serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
+	GetNode<Sprite>("Sprite").Hide();
+	GetNode<AnimatedSprite>("Animations").Hide();
+	missileAnimation.Stop();
+	missileAnimation.Frame = 0;
+	missileExplosion.Play();
+	GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
 
-    if (MyPlayer != null) MyPlayer.MyMissile = null;
+	if (MyPlayer != null) MyPlayer.MyMissile = null;
   }
 
   // Called when the node enters the scene tree for the first time.
@@ -59,9 +59,9 @@ public class SpaceMissile : Area2D
 	// connect the hit signal to handling the hit
 	//Connect(nameof(Hit), this, "_HandleHit");
 
-    missileAnimation = GetNode<AnimatedSprite>("Animations");
-    missileExplosion = GetNode<AnimatedSprite>("Explosion");
-    //GetNode<AudioStreamPlayer>("FireSound").Play();
+	missileAnimation = GetNode<AnimatedSprite>("Animations");
+	missileExplosion = GetNode<AnimatedSprite>("Explosion");
+	//GetNode<AudioStreamPlayer>("FireSound").Play();
   }
 
   public override void _Process(float delta)
