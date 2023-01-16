@@ -106,39 +106,36 @@ public class PlayerShip : KinematicBody2D
   }
 
   void UpdateShipAnimation(float rot, float vel) {
-	bool turning = (RotationDegrees != rot);
-	bool leftturn = (RotationDegrees < rot);
-	bool rightturn = (RotationDegrees > rot);
-	bool straight = (RotationDegrees == rot);
-	bool still = (CurrentVelocity == 0 && vel == 0);
-	bool cruise = (CurrentVelocity > 0 && CurrentVelocity == vel);
-	bool thrust = (CurrentVelocity < vel);
-	bool brake = (!still && CurrentVelocity > vel);
-	bool stopping = (vel == 0);
-	string vectorState = "default";
-	// Increasing thrust
-	if(!shipAnimator.IsPlaying()) {
-		if (thrust && TravelState != "thrust") {
-			TravelState = "thrust";
-			shipAnimator.Play("thrust-straight");
-		} else if (!still && brake) {
-			if (!stopping && TravelState != "slow") {
-				TravelState = "slow";
-				shipAnimator.Play("slow-straight");
-			} else if (stopping && TravelState != "brake") {
-				TravelState = "brake";
-				shipAnimator.Play("brake-straight");
+		bool turning = (RotationDegrees != rot);
+		bool leftturn = (RotationDegrees > rot);
+		bool rightturn = (RotationDegrees < rot);
+		bool cruise = (CurrentVelocity == vel);
+		bool thrust = (CurrentVelocity < vel);
+		bool brake = (CurrentVelocity > vel);
+
+		if(!shipAnimator.IsPlaying()) {
+			if (!turning) {
+				if (thrust) {
+					shipAnimator.Play("thrust");
+					vectorLbl.Text = "thrust";
+				} else if (brake) {
+					shipAnimator.Play("brake");
+					vectorLbl.Text = "thrust";
+				} else {
+					shipAnimator.Play("cruise");
+					vectorLbl.Text = "cruise";
+				}
+			} else {
+				if (leftturn) {
+					shipAnimator.Play("left");
+					vectorLbl.Text = "left";
+				} else {
+					shipAnimator.Play("right");
+					vectorLbl.Text = "right";
+				}
 			}
-		} else if (cruise) {
-			TravelState = "cruise";
-			shipAnimator.Play("full-straight");
-		} else if (still) {
-			TravelState = "default";
-			shipAnimator.Play("default");
 		}
-		vectorLbl.Text = TravelState;
 	}
-  }
 
   /// <summary>
   /// 
