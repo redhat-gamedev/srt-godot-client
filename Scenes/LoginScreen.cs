@@ -5,7 +5,7 @@ public class LoginScreen : Control
 {
   Game MyGame;
 
-  public Serilog.Core.Logger _serilogger;
+  Serilog.Core.Logger _serilogger;
 
   LineEdit textField;
 
@@ -13,7 +13,6 @@ public class LoginScreen : Control
   {
     MyGame = GetNode<Game>("/root/Game");
     _serilogger = MyGame._serilogger;
-
 
     textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
     textField.GrabFocus();
