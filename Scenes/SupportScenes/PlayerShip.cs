@@ -148,6 +148,12 @@ public class PlayerShip : KinematicBody2D
   /// </summary>
   public void ExpireMissile() { MyMissile = null; }
 
+  public void ExpirePlayer() 
+  { 
+    // need to free the parent of the ship, which is the "shipthing"
+    GetParent().QueueFree();
+  }
+
   // TODO: this is unused -- should we relocate fire methods from Game.cs?
   public void FireMissile()
   {
@@ -236,9 +242,8 @@ public class PlayerShip : KinematicBody2D
 
   void _on_ExplodeSound_finished()
   {
-	_serilogger.Debug($"PlayerShip.cs: Explosion sound finished - freeing queue");
-	// need to free the parent of the ship, which is the "shipthing"
-	GetParent().QueueFree();
+    _serilogger.Verbose($"PlayerShip.cs: Explosion sound finished - expiring player");
+    ExpirePlayer();
   }
 
 }

@@ -5,7 +5,7 @@ public class LoginScreen : Control
 {
   Game MyGame;
 
-  public Serilog.Core.Logger _serilogger;
+  Serilog.Core.Logger _serilogger;
 
   LineEdit textField;
 
@@ -14,9 +14,8 @@ public class LoginScreen : Control
 	MyGame = GetNode<Game>("/root/Game");
 	_serilogger = MyGame._serilogger;
 
-
-	textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
-	textField.GrabFocus();
+    textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
+    textField.GrabFocus();
 
 	// TODO: need to interrogate server for the initial defaults for things like
 	// missile speed
