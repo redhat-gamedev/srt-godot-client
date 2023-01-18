@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=16 format=2]
 
 [ext_resource path="res://Assets/Sprites/Ships/spaceship_spritesheet.png" type="Texture" id=1]
 [ext_resource path="res://Scenes/SupportScenes/PlayerShip.cs" type="Script" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://Assets/Sounds/ship-explode.wav" type="AudioStream" id=5]
 [ext_resource path="res://Scenes/SupportScenes/HitPoints.gd" type="Script" id=6]
 [ext_resource path="res://Assets/Sprites/Ships/health-grey.png" type="Texture" id=7]
+[ext_resource path="res://Assets/Sprites/Ships/thrust_spritesheet.png" type="Texture" id=8]
 
 [sub_resource type="ShaderMaterial" id=1]
 resource_local_to_scene = true
@@ -21,7 +22,7 @@ shader_param/blue = 0.0
 [sub_resource type="Animation" id=2]
 length = 0.001
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -32,28 +33,52 @@ tracks/0/keys = {
 "update": 0,
 "values": [ 0 ]
 }
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
 
 [sub_resource type="Animation" id=5]
 resource_name = "brake"
-length = 0.5
+length = 0.75
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
 "update": 1,
-"values": [ 18 ]
+"values": [ 27, 28, 29, 30, 31, 32, 33, 34 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 1,
+"values": [ 27, 28, 29, 30, 31, 32, 33, 34 ]
 }
 
 [sub_resource type="Animation" id=7]
 resource_name = "cruise"
 length = 0.1
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
@@ -64,53 +89,101 @@ tracks/0/keys = {
 "update": 1,
 "values": [ 0 ]
 }
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0 ),
+"transitions": PoolRealArray( 1 ),
+"update": 1,
+"values": [ 0 ]
+}
 
 [sub_resource type="Animation" id=8]
 resource_name = "left"
-length = 0.5
+length = 0.75
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
 "update": 1,
-"values": [ 27 ]
+"values": [ 9, 10, 11, 12, 13, 14, 15, 16 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 1,
+"values": [ 9, 10, 11, 12, 13, 14, 15, 16 ]
 }
 
 [sub_resource type="Animation" id=9]
 resource_name = "right"
-length = 0.5
+length = 0.75
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
 "update": 1,
-"values": [ 36 ]
+"values": [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 1,
+"values": [ 1, 2, 3, 4, 5, 6, 7, 8 ]
 }
 
 [sub_resource type="Animation" id=4]
 resource_name = "thrust"
-length = 0.5
+length = 0.75
 tracks/0/type = "value"
-tracks/0/path = NodePath("Sprite:frame")
+tracks/0/path = NodePath("ShipSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PoolRealArray( 0 ),
-"transitions": PoolRealArray( 1 ),
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
 "update": 1,
-"values": [ 10 ]
+"values": [ 18, 19, 20, 21, 22, 23, 24, 25 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("ThrustSprite:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ),
+"transitions": PoolRealArray( 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 1,
+"values": [ 18, 19, 20, 21, 22, 23, 24, 25 ]
 }
 
 [node name="ShipThings" type="Node2D"]
@@ -198,13 +271,18 @@ __meta__ = {
 [node name="PlayerShip" type="KinematicBody2D" parent="."]
 script = ExtResource( 2 )
 
-[node name="Sprite" type="Sprite" parent="PlayerShip"]
+[node name="ShipSprite" type="Sprite" parent="PlayerShip"]
 texture = ExtResource( 1 )
 hframes = 9
-vframes = 5
+vframes = 4
+
+[node name="ThrustSprite" type="Sprite" parent="PlayerShip"]
+texture = ExtResource( 8 )
+hframes = 9
+vframes = 4
 
 [node name="ShipHitBox" type="CollisionPolygon2D" parent="PlayerShip"]
-polygon = PoolVector2Array( -5, -37, 6, -37, 18, 4, 29, 9, 31, 15, 32, 29, 21, 29, 10, 26, -9, 26, -19, 28, -30, 28, -30, 15, -27, 8, -16, 4 )
+polygon = PoolVector2Array( -6, -44, 6, -44, 20, 4, 32, 9, 35, 21, 35, 33, 23, 33, 11, 27, -12, 28, -23, 32, -34, 32, -36, 20, -32, 8, -19, 4 )
 
 [node name="RemoteTransform2D" type="RemoteTransform2D" parent="PlayerShip"]
 remote_path = NodePath("../../Stat")
@@ -234,7 +312,7 @@ texture = ExtResource( 3 )
 [node name="ExplodeSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
 stream = ExtResource( 5 )
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="PlayerShip"]
+[node name="ShipSpritePlayer" type="AnimationPlayer" parent="PlayerShip"]
 anims/RESET = SubResource( 2 )
 anims/brake = SubResource( 5 )
 anims/cruise = SubResource( 7 )

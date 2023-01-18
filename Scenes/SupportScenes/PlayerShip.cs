@@ -47,6 +47,7 @@ public class PlayerShip : KinematicBody2D
 
   Node2D shipThing;
 
+	Sprite thrustSprite;
   TextureProgress hitPointRing;
   AnimationPlayer shipAnimator;
   Label vectorLbl;
@@ -63,8 +64,9 @@ public class PlayerShip : KinematicBody2D
 	Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
 	hitPointRing = (TextureProgress)GetNode("HitPoints");
-	shipAnimator = (AnimationPlayer)GetNode("AnimationPlayer");
+	shipAnimator = (AnimationPlayer)GetNode("ShipSpritePlayer");
 	vectorLbl = (Label)GetParent().GetNode("Stat").GetNode("VectorLbl");
+	thrustSprite = (Sprite)GetNode("ThrustSprite");
 	
 	// TODO: deal with really long UUIDs
 	playerIDLabel.Text = uuid;
@@ -109,27 +111,31 @@ public class PlayerShip : KinematicBody2D
 		bool turning = (RotationDegrees != rot);
 		bool leftturn = (RotationDegrees > rot);
 		bool rightturn = (RotationDegrees < rot);
-		bool cruise = (CurrentVelocity == vel);
+		bool cruise = (CurrentVelocity == vel || CurrentVelocity == MaxSpeed);
 		bool thrust = (CurrentVelocity < vel);
 		bool brake = (CurrentVelocity > vel);
-
 		if(!shipAnimator.IsPlaying()) {
+			if (thrust || CurrentVelocity == MaxSpeed) {
+				thrustSprite.Visible = true;
+			} else {
+				thrustSprite.Visible = false;
+			}
 			if (!turning) {
-				if (thrust) {
+				if (thrust && shipAnimator.AssignedAnimation != "thrust") {
 					shipAnimator.Play("thrust");
 					vectorLbl.Text = "thrust";
-				} else if (brake) {
+				} else if (brake && shipAnimator.AssignedAnimation != "brake") {
 					shipAnimator.Play("brake");
 					vectorLbl.Text = "thrust";
-				} else {
+				} else if (shipAnimator.AssignedAnimation != "cruise") {
 					shipAnimator.Play("cruise");
 					vectorLbl.Text = "cruise";
 				}
 			} else {
-				if (leftturn) {
+				if (leftturn && shipAnimator.AssignedAnimation != "left") {
 					shipAnimator.Play("left");
 					vectorLbl.Text = "left";
-				} else {
+				} else if (shipAnimator.AssignedAnimation != "right") {
 					shipAnimator.Play("right");
 					vectorLbl.Text = "right";
 				}
