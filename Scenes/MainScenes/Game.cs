@@ -14,6 +14,7 @@ public class Game : Node
 
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
+  private Authorization authorization = new Authorization();
 
   private Stopwatch GameStopwatch = new Stopwatch();
 
@@ -164,11 +165,13 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
+
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedLoginScene.Instance();
-    loginScreen.Hide();
+    loginScreen.Visible = false;
     this.AddChild(loginScreen);
-    loginScreen.Show();
+    this.AddChild(authorization);
+    authorization.Connect("playerAuthenticated", this, "_on_go_to_game");
 
     // TODO: check for server connection and do some retries if something is wrong
     // if lots of fails, pop up an error screen (and let player do server config?)
@@ -316,7 +319,7 @@ public class Game : Node
   void ProcessPlayerDestroy()
   {
     GameEvent ge = null;
-    while(PlayerDestroyQueue.TryDequeue(out ge))
+    while (PlayerDestroyQueue.TryDequeue(out ge))
     {
       if (null == ge)
       {
@@ -444,7 +447,7 @@ public class Game : Node
     // instead of doing this, no?
     if (inGame)
     {
-      if (Input.IsActionPressed("rotate_right")) 
+      if (Input.IsActionPressed("rotate_right"))
       {
         velocity.x += 1;
         turnRightControlLit = true;
@@ -454,7 +457,7 @@ public class Game : Node
         turnRightControlLit = false;
       }
 
-      if (Input.IsActionPressed("rotate_left")) 
+      if (Input.IsActionPressed("rotate_left"))
       {
         velocity.x -= 1;
         turnLeftControlLit = true;
@@ -464,7 +467,7 @@ public class Game : Node
         turnLeftControlLit = false;
       }
 
-      if (Input.IsActionPressed("thrust_forward")) 
+      if (Input.IsActionPressed("thrust_forward"))
       {
         velocity.y += 1;
         fasterControlLit = true;
@@ -474,7 +477,7 @@ public class Game : Node
         fasterControlLit = false;
       }
 
-      if (Input.IsActionPressed("thrust_reverse")) 
+      if (Input.IsActionPressed("thrust_reverse"))
       {
         velocity.y -= 1;
         slowerControlLit = true;
@@ -484,7 +487,7 @@ public class Game : Node
         slowerControlLit = false;
       }
 
-      if (Input.IsActionPressed("fire")) 
+      if (Input.IsActionPressed("fire"))
       {
         shoot.y = 1;
         fireControlLit = true;
@@ -634,11 +637,11 @@ public class Game : Node
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
         shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
       }
-			else
-			{
+      else
+      {
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, warp out");
         shipInstance.GetNode<AudioStreamPlayer2D>("WarpOutSound").Play();
-			}
+      }
 
       _serilogger.Debug($"Game.cs: Expiring player {uuid}");
 
@@ -870,6 +873,12 @@ public class Game : Node
       theNode.RemoveChild(n);
       n.QueueFree();
     }
+  }
+
+  public void _on_go_to_game()
+  {
+    GD.Print("User authenticated, go to LoginScreen");
+    loginScreen.Visible = true;
   }
 
 }
