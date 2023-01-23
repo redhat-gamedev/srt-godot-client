@@ -14,7 +14,7 @@ public class Game : Node
 
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
-  private Authorization authorization = new Authorization();
+  private Authorization authorization;
 
   private Stopwatch GameStopwatch = new Stopwatch();
 
@@ -165,13 +165,16 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
-
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
+
     loginScreen = (LoginScreen)packedLoginScene.Instance();
-    loginScreen.Visible = false;
+    authorization = authorization = new Authorization();
+
     this.AddChild(loginScreen);
     this.AddChild(authorization);
+
     authorization.Connect("playerAuthenticated", this, "_on_go_to_game");
+    loginScreen.Connect("retryAuthorization", this, "_on_retry_auth");
 
     // TODO: check for server connection and do some retries if something is wrong
     // if lots of fails, pop up an error screen (and let player do server config?)
@@ -875,10 +878,23 @@ public class Game : Node
     }
   }
 
-  public void _on_go_to_game()
+  public void _on_go_to_game(bool isAuthorized)
   {
-    GD.Print("User authenticated, go to LoginScreen");
-    loginScreen.Visible = true;
+    if (isAuthorized)
+    {
+      GD.Print("User authenticated, go to LoginScreen");
+      loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+    }
+    else
+    {
+      GD.Print("User no authenticated,retry");
+      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+    }
   }
-
+  public void _on_retry_auth()
+  {
+    GD.Print("Retry authorization");
+    authorization.authorize();
+  }
 }
