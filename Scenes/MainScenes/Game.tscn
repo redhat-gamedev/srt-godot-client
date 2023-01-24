@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Scenes/MainScenes/GUI.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Scenes/MainScenes/Game.cs" type="Script" id=2]
-[ext_resource path="res://Assets/Artwork/parallax-starfield-encumbered.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Artwork/2023_Starfield.png" type="Texture" id=3]
 [ext_resource path="res://Assets/Sounds/space-chillout-14194.mp3" type="AudioStream" id=4]
 
 [node name="Game" type="Node"]
@@ -11,7 +11,7 @@ script = ExtResource( 2 )
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
 
 [node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground"]
-motion_mirroring = Vector2( 1680, 1050 )
+motion_mirroring = Vector2( 1920, 1080 )
 
 [node name="Sprite" type="Sprite" parent="ParallaxBackground/ParallaxLayer"]
 texture = ExtResource( 3 )
@@ -21,4 +21,3 @@ centered = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 4 )
-autoplay = true

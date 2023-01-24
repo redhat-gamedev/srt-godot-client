@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/parallax-starfield-encumbered.png-37b456fcd8cb2399de822b33404f8e69.stex"
+path="res://.import/2023_Starfield.png-871b3460606c27361c7dae1375f4fa15.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Artwork/parallax-starfield-encumbered.png"
-dest_files=[ "res://.import/parallax-starfield-encumbered.png-37b456fcd8cb2399de822b33404f8e69.stex" ]
+source_file="res://Assets/Artwork/2023_Starfield.png"
+dest_files=[ "res://.import/2023_Starfield.png-871b3460606c27361c7dae1375f4fa15.stex" ]
 
 [params]
 
