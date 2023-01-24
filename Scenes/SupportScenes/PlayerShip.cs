@@ -103,8 +103,8 @@ public class PlayerShip : KinematicBody2D
   /// </summary>
   public void ExpireMissile() { MyMissile = null; }
 
-  public void ExpirePlayer() 
-  { 
+  public void ExpirePlayer()
+  {
     // need to free the parent of the ship, which is the "shipthing"
     GetParent().QueueFree();
   }
@@ -168,7 +168,7 @@ public class PlayerShip : KinematicBody2D
 
     MissileReloadCountdown -= delta;
     if (MissileReloadCountdown <= 0)
-    { 
+    {
       _serilogger.Debug($"PlayerShip.cs: player {uuid} missile reload countdown complete");
       MissileReady = true;
     }
@@ -194,6 +194,12 @@ public class PlayerShip : KinematicBody2D
   void _on_ExplodeSound_finished()
   {
     _serilogger.Verbose($"PlayerShip.cs: Explosion sound finished - expiring player");
+    ExpirePlayer();
+  }
+
+  void _on_WarpOutSound_finished()
+  {
+    _serilogger.Verbose($"PlayerShip.cs: Warp out sound finished - expiring player");
     ExpirePlayer();
   }
 
