@@ -151,16 +151,16 @@ public class Game : Node
 	// if lots of fails, pop up an error screen (and let player do server config?)
   }
 
-	public void displayGameOverScreen()
-	{
+  public void displayGameOverScreen()
+  {
 	_serilogger.Verbose($"Game.cs: hide the GUI");
 	CanvasLayer ourGui = GetNode<CanvasLayer>("GUI");
 	ourGui.Hide();
 
-		PackedScene packedGameOverScene = (PackedScene)ResourceLoader.Load("res://Scenes/GameOverScreen.tscn");
-		GameOverScreen gameOver = (GameOverScreen)packedGameOverScene.Instance();
-		AddChild(gameOver);
-	}
+	PackedScene packedGameOverScene = (PackedScene)ResourceLoader.Load("res://Scenes/GameOverScreen.tscn");
+	GameOverScreen gameOver = (GameOverScreen)packedGameOverScene.Instance();
+	AddChild(gameOver);
+  }
 
   public void initializeGameUI()
   {
@@ -241,14 +241,14 @@ public class Game : Node
 
 	  // don't draw ourselves
 	  if (player == myUuid) continue;
-	  _serilogger.Debug($"Game.cs: Drawing radar dot for {player}");
+	  _serilogger.Verbose($"Game.cs: Drawing radar dot for {player}");
 
-	  _serilogger.Debug($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
+	  _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
 
 	  float deltaX = myShip.Position.x - playerShip.Position.x;
 	  float deltaY = myShip.Position.y - playerShip.Position.y;
 
-	  _serilogger.Debug($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
+	  _serilogger.Verbose($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
 
 	  // scale the relative position where 10,000 is the edge of the radar circle
 	  float scaledX = (deltaX / 10000) * (280 / 2);
@@ -258,7 +258,7 @@ public class Game : Node
 	  float finalX = (scaledX * -1) + 169;
 	  float finalY = (scaledY * -1) + 215;
 
-	  _serilogger.Debug($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
+	  _serilogger.Verbose($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
 
 	  // add a blip at the scaled location offset from the center
 	  Sprite newBlip = new Sprite();
@@ -397,7 +397,7 @@ public class Game : Node
 	  if (radarRefreshTimer >= radarRefreshTime)
 	  {
 		radarRefreshTimer = 0;
-		_serilogger.Debug($"Game.cs: Updating radar");
+		_serilogger.Verbose($"Game.cs: Updating radar");
 		updateGameRadar();
 	  }
 	}
@@ -470,6 +470,9 @@ public class Game : Node
 
 	  _serilogger.Debug("Game.cs: Adding ship to scene tree");
 	  AddChild(playerShipThingInstance);
+
+	  // if the player is not us and we are ingame, play the warp in sound
+	  if (inGame == true && uuid != myUuid) shipInstance.GetNode<AudioStreamPlayer2D>("WarpInSound").Play();
 	}
 	else return shipInstance;
 
@@ -517,14 +520,16 @@ public class Game : Node
 		shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
 	  }
 
-			// if we are removing ourselves, we should set ingame to false
-			if (uuid == myUuid) 
-			{
-				inGame = false;
-		_serilogger.Debug($"Game.cs: destroy is for our player -- game over");
-		shipInstance.ExpirePlayer();
+    _serilogger.Debug($"Game.cs: Expiring player {uuid}");
+	  shipInstance.ExpirePlayer();
+
+	  // if we are removing ourselves, we should set ingame to false
+	  if (uuid == myUuid)
+	  {
+		inGame = false;
+		_serilogger.Debug($"Game.cs: destroy is for our player, display game over screen");
 		displayGameOverScreen();
-			}
+	  }
 
 	  // remove our ship from the known ship objects
 	  playerObjects.Remove(uuid);
