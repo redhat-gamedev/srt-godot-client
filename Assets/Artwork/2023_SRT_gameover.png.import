@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/loginscreen_quick-sketch.png-893a3c937306cf06d60f387a69c857ff.stex"
+path="res://.import/2023_SRT_gameover.png-86da6046a80b62fea88e8b83bc80b924.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Artwork/loginscreen_quick-sketch.png"
-dest_files=[ "res://.import/loginscreen_quick-sketch.png-893a3c937306cf06d60f387a69c857ff.stex" ]
+source_file="res://Assets/Artwork/2023_SRT_gameover.png"
+dest_files=[ "res://.import/2023_SRT_gameover.png-86da6046a80b62fea88e8b83bc80b924.stex" ]
 
 [params]
 
