@@ -108,9 +108,12 @@ public class PlayerShip : KinematicBody2D
   }
 
   void UpdateShipAnimation(float rot, float vel) {
+		/*
+		Rotation -180 to 0 to 180
+		*/
 		bool turning = (RotationDegrees != rot);
-		bool leftturn = (RotationDegrees > rot);
-		bool rightturn = (RotationDegrees < rot);
+		bool leftturn = (360+RotationDegrees) > (360+rot);
+		bool rightturn = (360+RotationDegrees) < (360+rot);
 		bool cruise = (CurrentVelocity == vel || CurrentVelocity == MaxSpeed);
 		bool thrust = (CurrentVelocity < vel);
 		bool brake = (CurrentVelocity > vel);
@@ -121,23 +124,26 @@ public class PlayerShip : KinematicBody2D
 				thrustSprite.Visible = false;
 			}
 			if (!turning) {
+				if (shipAnimator.AssignedAnimation == "left" || shipAnimator.AssignedAnimation == "right"){
+					shipAnimator.PlayBackwards(shipAnimator.AssignedAnimation);
+				}				
 				if (thrust && shipAnimator.AssignedAnimation != "thrust") {
 					shipAnimator.Play("thrust");
-					vectorLbl.Text = "thrust";
+					//vectorLbl.Text = "thrust";
 				} else if (brake && shipAnimator.AssignedAnimation != "brake") {
 					shipAnimator.Play("brake");
-					vectorLbl.Text = "thrust";
+					//vectorLbl.Text = "thrust";
 				} else if (shipAnimator.AssignedAnimation != "cruise") {
 					shipAnimator.Play("cruise");
-					vectorLbl.Text = "cruise";
+					//vectorLbl.Text = "cruise";
 				}
 			} else {
 				if (leftturn && shipAnimator.AssignedAnimation != "left") {
 					shipAnimator.Play("left");
-					vectorLbl.Text = "left";
+					vectorLbl.Text = RotationDegrees.ToString();
 				} else if (shipAnimator.AssignedAnimation != "right") {
 					shipAnimator.Play("right");
-					vectorLbl.Text = "right";
+					vectorLbl.Text = RotationDegrees.ToString();
 				}
 			}
 		}

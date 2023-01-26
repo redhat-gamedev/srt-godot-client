@@ -201,7 +201,7 @@ text = "UUIDUUID"
 align = 1
 
 [node name="VectorLbl" type="Label" parent="Stat"]
-visible = false
+visible = true
 margin_left = -50.0
 margin_top = 75.0
 margin_right = 50.0
