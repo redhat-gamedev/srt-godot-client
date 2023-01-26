@@ -8,6 +8,8 @@
 [ext_resource path="res://Scenes/SupportScenes/HitPoints.gd" type="Script" id=6]
 [ext_resource path="res://Assets/Sprites/Ships/health-grey.png" type="Texture" id=7]
 [ext_resource path="res://Assets/Sprites/Ships/thrust_spritesheet.png" type="Texture" id=8]
+[ext_resource path="res://Assets/Sounds/453391__breviceps__warp-sfx.wav" type="AudioStream" id=6]
+[ext_resource path="res://Assets/Sounds/400126__harrietniamh__sci-fi-warp.wav" type="AudioStream" id=7]
 
 [sub_resource type="ShaderMaterial" id=1]
 resource_local_to_scene = true
@@ -319,5 +321,11 @@ anims/cruise = SubResource( 7 )
 anims/left = SubResource( 8 )
 anims/right = SubResource( 9 )
 anims/thrust = SubResource( 4 )
+[node name="WarpInSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
+stream = ExtResource( 6 )
+
+[node name="WarpOutSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
+stream = ExtResource( 7 )
 
 [connection signal="finished" from="PlayerShip/ExplodeSound" to="PlayerShip" method="_on_ExplodeSound_finished"]
+[connection signal="finished" from="PlayerShip/WarpOutSound" to="PlayerShip" method="_on_WarpOutSound_finished"]
