@@ -374,7 +374,7 @@ public class Game : Node
   {
     if (status)
     {
-      toControl.Modulate = new Color(1.5f, 1.5f, 1.5f, 1);
+      toControl.Modulate = new Color(2.5f, 2.5f, 2.5f, 1);
     }
     else
     {
