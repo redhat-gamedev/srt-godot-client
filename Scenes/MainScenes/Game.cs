@@ -23,11 +23,21 @@ public class Game : Node
   TextureRect speedometer;
   TextureRect missileDisplay;
   TextureRect missileReadyIndicator;
-  Texture missileReadyIndicatorReady;
-  Texture missileReadyIndicatorNotReady;
-  Texture missileReadyIndicatorDefault;
+  Texture missileReadyIndicatorReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
+  Texture missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
+  Texture missileReadyIndicatorDefault = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
   TextureRect gameRadar;
   Texture shipBlip;
+  Label fasterControl;
+  bool fasterControlLit;
+  Label slowerControl;
+  bool slowerControlLit;
+  Label turnLeftControl;
+  bool turnLeftControlLit;
+  Label turnRightControl;
+  bool turnRightControlLit;
+  Label fireControl;
+  bool fireControlLit;
 
   // radar update timer
   int radarRefreshTime = 1; // 1000ms = 1sec
@@ -141,6 +151,18 @@ public class Game : Node
 
     LoadConfig();
 
+    // fetch nodes we need
+    gameUI = GetNode<CanvasLayer>("GUI");
+    speedometer = gameUI.GetNode<TextureRect>("Speedometer");
+    missileDisplay = gameUI.GetNode<TextureRect>("Missile");
+    missileReadyIndicator = gameUI.GetNode<TextureRect>("Missile/MissileReadyIndicator");
+    gameRadar = gameUI.GetNode<TextureRect>("Radar");
+    fasterControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/Faster");
+    slowerControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/Slower");
+    turnLeftControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnLeft");
+    turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
+    fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
+
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     loginScreen.Hide();
@@ -167,30 +189,12 @@ public class Game : Node
     // we are now in the game
     inGame = true;
 
-    // load the textures for the missile statuses
-    missileReadyIndicatorDefault = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
-    missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
-    missileReadyIndicatorReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
-
     // load the ship blip texture
     shipBlip = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/ship_blip.png");
 
     // TODO: should we be adding the GUI to the scene instead of displaying its elements?
     // find the HUD to show its elements
-    gameUI = GetNode<CanvasLayer>("GUI");
     gameUI.Show();
-
-    speedometer = gameUI.GetNode<TextureRect>("Speedometer");
-    speedometer.Show();
-
-    missileDisplay = gameUI.GetNode<TextureRect>("Missile");
-    missileDisplay.Show();
-
-    missileReadyIndicator = gameUI.GetNode<TextureRect>("Missile/MissileReadyIndicator");
-
-    gameRadar = gameUI.GetNode<TextureRect>("Radar");
-    gameRadar.Show();
-    gameUI.GetNode<TextureRect>("RadarReticle").Show();
   }
 
   // called to update camera and 2d listener for audio
@@ -356,6 +360,28 @@ public class Game : Node
     _serilogger.Debug($"Game.cs: Missile Reload Time: {PlayerDefaultMissileReloadTime}");
   }
 
+  void ProcessControlLights()
+  {
+    _serilogger.Verbose($"Game.cs: Processing control lights");
+    ToggleControlLight(fasterControl, fasterControlLit);
+    ToggleControlLight(slowerControl, slowerControlLit);
+    ToggleControlLight(turnLeftControl, turnLeftControlLit);
+    ToggleControlLight(turnRightControl, turnRightControlLit);
+    ToggleControlLight(fireControl, fireControlLit);
+  }
+
+  void ToggleControlLight(Label toControl, bool status)
+  {
+    if (status)
+    {
+      toControl.Modulate = new Color(1.5f, 1.5f, 1.5f, 1);
+    }
+    else
+    {
+      toControl.Modulate = new Color(1, 1, 1, 1);
+    }
+  }
+
   public override void _Process(float delta)
   {
     updateWhoAmI();
@@ -376,12 +402,59 @@ public class Game : Node
     // instead of doing this, no?
     if (inGame)
     {
-      if (Input.IsActionPressed("rotate_right")) velocity.x += 1;
-      if (Input.IsActionPressed("rotate_left")) velocity.x -= 1;
-      if (Input.IsActionPressed("thrust_forward")) velocity.y += 1;
-      if (Input.IsActionPressed("thrust_reverse")) velocity.y -= 1;
-      if (Input.IsActionPressed("fire")) shoot.y = 1;
+      if (Input.IsActionPressed("rotate_right")) 
+      {
+        velocity.x += 1;
+        turnRightControlLit = true;
+      }
+      else
+      {
+        turnRightControlLit = false;
+      }
+
+      if (Input.IsActionPressed("rotate_left")) 
+      {
+        velocity.x -= 1;
+        turnLeftControlLit = true;
+      }
+      else
+      {
+        turnLeftControlLit = false;
+      }
+
+      if (Input.IsActionPressed("thrust_forward")) 
+      {
+        velocity.y += 1;
+        fasterControlLit = true;
+      }
+      else
+      {
+        fasterControlLit = false;
+      }
+
+      if (Input.IsActionPressed("thrust_reverse")) 
+      {
+        velocity.y -= 1;
+        slowerControlLit = true;
+      }
+      else
+      {
+        slowerControlLit = false;
+      }
+
+      if (Input.IsActionPressed("fire")) 
+      {
+        shoot.y = 1;
+        fireControlLit = true;
+      }
+      else
+      {
+        fireControlLit = false;
+      }
+
       if ((velocity.Length() > 0) || (shoot.Length() > 0)) ProcessInputEvent(velocity, shoot);
+
+      ProcessControlLights();
 
       if (myShip != null)
       {
