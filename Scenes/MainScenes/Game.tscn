@@ -1,9 +1,20 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://Scenes/MainScenes/GUI.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Scenes/MainScenes/Game.cs" type="Script" id=2]
 [ext_resource path="res://Assets/Artwork/2023_Starfield.png" type="Texture" id=3]
 [ext_resource path="res://Assets/Sounds/upbeat-space-chillout-14194.mp3" type="AudioStream" id=4]
+
+[sub_resource type="Environment" id=1]
+background_mode = 4
+background_canvas_max_layer = 1
+glow_enabled = true
+glow_intensity = 2.42
+glow_strength = 0.81
+glow_blend_mode = 0
+glow_hdr_threshold = 0.4
+glow_hdr_scale = 1.5
+glow_bicubic_upscale = true
 
 [node name="Game" type="Node"]
 script = ExtResource( 2 )
@@ -18,6 +29,10 @@ texture = ExtResource( 3 )
 centered = false
 
 [node name="GUI" parent="." instance=ExtResource( 1 )]
+visible = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 4 )
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource( 1 )

@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://Assets/UIElements/HUD/HUD_speedometer.png" type="Texture" id=1]
 [ext_resource path="res://Assets/Fonts/RedHatText-Regular.tres" type="DynamicFont" id=2]
@@ -6,11 +6,12 @@
 [ext_resource path="res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png" type="Texture" id=4]
 [ext_resource path="res://Assets/UIElements/HUD/HUD_radar.png" type="Texture" id=5]
 [ext_resource path="res://Assets/UIElements/HUD/2022_SRT_Files_Radar.png" type="Texture" id=6]
+[ext_resource path="res://Assets/UIElements/MainTheme.tres" type="Theme" id=7]
+[ext_resource path="res://Assets/UIElements/ControlLabelsText.tres" type="Theme" id=8]
 
 [node name="GUI" type="CanvasLayer"]
 
 [node name="Speedometer" type="TextureRect" parent="."]
-visible = false
 anchor_top = 1.0
 anchor_bottom = 1.0
 margin_top = -170.0
@@ -22,12 +23,13 @@ margin_left = 229.0
 margin_top = 94.0
 margin_right = 336.0
 margin_bottom = 135.0
+theme = ExtResource( 7 )
+custom_colors/font_outline_modulate = Color( 0, 0, 0, 1 )
 custom_fonts/font = ExtResource( 2 )
 text = "0"
 align = 2
 
 [node name="Missile" type="TextureRect" parent="."]
-visible = false
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -45,16 +47,63 @@ margin_bottom = 218.0
 texture = ExtResource( 4 )
 
 [node name="Radar" type="TextureRect" parent="."]
-visible = false
 margin_right = 40.0
 margin_bottom = 40.0
 texture = ExtResource( 5 )
 
 [node name="RadarReticle" type="TextureRect" parent="."]
-visible = false
 margin_left = -76.0
 margin_top = 80.0
 margin_right = 415.0
 margin_bottom = 348.0
 texture = ExtResource( 6 )
 expand = true
+
+[node name="ControlIndicators" type="Control" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -376.0
+margin_bottom = 149.0
+
+[node name="ControlsBox" type="VBoxContainer" parent="ControlIndicators"]
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+margin_left = -190.0
+margin_top = -20.5
+margin_bottom = 20.5
+
+[node name="Faster" type="Label" parent="ControlIndicators/ControlsBox"]
+margin_right = 190.0
+margin_bottom = 41.0
+theme = ExtResource( 8 )
+text = "UP: Faster"
+
+[node name="Slower" type="Label" parent="ControlIndicators/ControlsBox"]
+margin_top = 45.0
+margin_right = 190.0
+margin_bottom = 86.0
+theme = ExtResource( 8 )
+text = "DN: Slower"
+
+[node name="TurnLeft" type="Label" parent="ControlIndicators/ControlsBox"]
+margin_top = 90.0
+margin_right = 190.0
+margin_bottom = 131.0
+theme = ExtResource( 8 )
+text = "L: Turn Left"
+
+[node name="TurnRight" type="Label" parent="ControlIndicators/ControlsBox"]
+margin_top = 135.0
+margin_right = 190.0
+margin_bottom = 176.0
+theme = ExtResource( 8 )
+text = "R: Turn Right"
+
+[node name="FireButton" type="Label" parent="ControlIndicators/ControlsBox"]
+margin_top = 180.0
+margin_right = 190.0
+margin_bottom = 221.0
+theme = ExtResource( 8 )
+text = "LCTRL: Fire"
