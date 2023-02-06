@@ -144,7 +144,6 @@ public class Game : Node
   {
     GameStopwatch.Start();
     levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
-
     _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
 
@@ -892,6 +891,7 @@ public class Game : Node
       loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
     }
   }
+
   public void _on_retry_auth()
   {
     GD.Print("Retry authorization");

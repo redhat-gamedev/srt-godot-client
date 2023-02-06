@@ -26,85 +26,85 @@ public class Authorization : Control
 
   public override void _Ready()
   {
-	var clientConfig = new ConfigFile();
+    var clientConfig = new ConfigFile();
 
-	Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
-	if (err == Godot.Error.Ok)
-	{
+    Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
+    if (err == Godot.Error.Ok)
+    {
 
-	  PORT = (int)clientConfig.GetValue("auth", "port");
-	  HOST = (String)clientConfig.GetValue("auth", "host");
-	  BINDING = (String)clientConfig.GetValue("auth", "binding");
-	  clientID = (String)clientConfig.GetValue("auth", "client_id");
-	  clientSecret = (String)clientConfig.GetValue("auth", "client_secret");
-	  authServer = (String)clientConfig.GetValue("auth", "auth_api_url");
-	  tokenServer = (String)clientConfig.GetValue("auth", "token_api_url");
+      PORT = (int)clientConfig.GetValue("auth", "port");
+      HOST = (String)clientConfig.GetValue("auth", "host");
+      BINDING = (String)clientConfig.GetValue("auth", "binding");
+      clientID = (String)clientConfig.GetValue("auth", "client_id");
+      clientSecret = (String)clientConfig.GetValue("auth", "client_secret");
+      authServer = (String)clientConfig.GetValue("auth", "auth_api_url");
+      tokenServer = (String)clientConfig.GetValue("auth", "token_api_url");
 
-	  redirectUri = String.Format("http://{0}:{1}", BINDING, PORT);
+      redirectUri = String.Format("http://{0}:{1}", BINDING, PORT);
 
-	  authorize();
-	}
+      authorize();
+    }
   }
 
   public override async void _Process(float delta)
   {
-	if (redirectServer.IsConnectionAvailable())
-	{
-	  GD.Print("get Auth Code from callback");
-	  StreamPeerTCP connection = redirectServer.TakeConnection();
+    if (redirectServer.IsConnectionAvailable())
+    {
+      GD.Print("get Auth Code from callback");
+      StreamPeerTCP connection = redirectServer.TakeConnection();
 
-	  string request = connection.GetString(connection.GetAvailableBytes());
+      string request = connection.GetString(connection.GetAvailableBytes());
 
-	  string authCode = request.Split("&code")[1].Split("=")[1].Split(" ")[0];
-	  GD.Print(authCode);
-	  if (request != "" && authCode != null)
-	  {
-		SetProcess(false);
-		await getTokenFromAuthCode(authCode);
+      string authCode = request.Split("&code")[1].Split("=")[1].Split(" ")[0];
+      GD.Print(authCode);
+      if (request != "" && authCode != null)
+      {
+        SetProcess(false);
+        await getTokenFromAuthCode(authCode);
 
-		connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 \r\n\r\n"));
-		connection.PutData(Encoding.ASCII.GetBytes(loadHTML(HTML_REDIRECTION_PAGE)));
-		GD.Print("stop server");
-		redirectServer.Stop();
-	  }
+        connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 \r\n\r\n"));
+        connection.PutData(Encoding.ASCII.GetBytes(loadHTML(HTML_REDIRECTION_PAGE)));
+        GD.Print("stop server");
+        redirectServer.Stop();
+      }
 
-	}
+    }
   }
   public async void authorize()
   {
-	GD.Print("Authorizing");
-	bool isAuthorized = false;
+    GD.Print("Authorizing");
+    bool isAuthorized = false;
 
-	loadToken();
-	SetProcess(false);
+    loadToken();
+    SetProcess(false);
 
-	if (!(isAuthorized = await isTokenValid()))
-	{
-	  if (!(isAuthorized = await refreshTokens()))
-	  {
-		getAuthCode();
-	  };
-	}
+    if (!(isAuthorized = await isTokenValid()))
+    {
+      if (!(isAuthorized = await refreshTokens()))
+      {
+        getAuthCode();
+      };
+    }
 
-	if (isAuthorized)
-	{
-	  GD.Print("Authorized");
-	  EmitSignal("playerAuthenticated", isAuthorized);
+    if (isAuthorized)
+    {
+      GD.Print("Authorized");
+      EmitSignal("playerAuthenticated", isAuthorized);
 
-	}
-	else
-	{
-	  GD.Print("NO Authorized");
-	}
+    }
+    else
+    {
+      GD.Print("NO Authorized");
+    }
   }
 
   private void getAuthCode()
   {
-	GD.Print("call login - ask auth code");
-	SetProcess(true);
-	redirectServer.Listen((ushort)PORT, HOST);
+    GD.Print("call login - ask auth code");
+    SetProcess(true);
+    redirectServer.Listen((ushort)PORT, HOST);
 
-	string[] bodyPart = {
+    string[] bodyPart = {
   String.Format("client_id={0}", clientID),
   String.Format("redirect_uri={0}", redirectUri),
   "response_type=code",
@@ -112,20 +112,20 @@ public class Authorization : Control
 
   };
 
-	string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
+    string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
 
-	OS.ShellOpen(url);
+    OS.ShellOpen(url);
   }
 
   private async Task<bool> getTokenFromAuthCode(string authCode)
   {
-	GD.Print("get Token from AuthCode");
-	string[] header ={
+    GD.Print("get Token from AuthCode");
+    string[] header ={
   "Content-Type:application/x-www-form-urlencoded"
   };
 
 
-	string[] bodyPart = {
+    string[] bodyPart = {
   String.Format("code={0}", authCode),
   String.Format("client_id={0}", clientID),
   String.Format("client_secret={0}", clientSecret),
@@ -134,178 +134,178 @@ public class Authorization : Control
   "scope=openId"
   };
 
-	var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
-	if (bodyParsed.Contains("access_token"))
-	{
-	  token = bodyParsed["access_token"].ToString();
-	  refreshToken = bodyParsed["refresh_token"].ToString();
+    if (bodyParsed.Contains("access_token"))
+    {
+      token = bodyParsed["access_token"].ToString();
+      refreshToken = bodyParsed["refresh_token"].ToString();
 
-	  saveToken();
-	  EmitSignal("playerAuthenticated", true);
-	  return true;
-	}
-	else
-	{
-	  GD.Print("Error: no token received");
-	  EmitSignal("playerAuthenticated", false);
-	  return false;
-	}
+      saveToken();
+      EmitSignal("playerAuthenticated", true);
+      return true;
+    }
+    else
+    {
+      GD.Print("Error: no token received");
+      EmitSignal("playerAuthenticated", false);
+      return false;
+    }
 
   }
 
   private async Task<bool> isTokenValid()
   {
-	GD.Print("validate token");
+    GD.Print("validate token");
 
-	if (token == null)
-	{
-	  GD.Print("token not found");
-	  return false;
-	}
+    if (token == null)
+    {
+      GD.Print("token not found");
+      return false;
+    }
 
-	string[] header = { "Content-Type:application/x-www-form-urlencoded" };
+    string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
-	string[] bodyPart = {
+    string[] bodyPart = {
   String.Format("client_id={0}", clientID),
   String.Format("client_secret={0}", clientSecret),
   String.Format("token={0}", token),
   "token_type_hint=access_token"
   };
 
-	var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
-	if (bodyParsed.Contains("exp"))
-	{
-	  var expiration = Double.Parse(bodyParsed["exp"].ToString());
+    if (bodyParsed.Contains("exp"))
+    {
+      var expiration = Double.Parse(bodyParsed["exp"].ToString());
 
-	  GD.Print(expiration);
+      GD.Print(expiration);
 
-	  GD.Print(DateTimeOffset.Now.ToUnixTimeSeconds());
+      GD.Print(DateTimeOffset.Now.ToUnixTimeSeconds());
 
-	  if (expiration > DateTimeOffset.Now.ToUnixTimeSeconds())
-	  {
-		return true;
-	  }
-	}
+      if (expiration > DateTimeOffset.Now.ToUnixTimeSeconds())
+      {
+        return true;
+      }
+    }
 
-	GD.Print("token expired");
-	return false;
+    GD.Print("token expired");
+    return false;
 
   }
 
   private async Task<bool> refreshTokens()
   {
-	GD.Print("fetch refresh - ask new access token");
-	if (refreshToken == null)
-	{
-	  GD.Print("refresh token not locally saved");
-	  return false;
-	}
+    GD.Print("fetch refresh - ask new access token");
+    if (refreshToken == null)
+    {
+      GD.Print("refresh token not locally saved");
+      return false;
+    }
 
-	string[] header = { "Content-Type:application/x-www-form-urlencoded" };
+    string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
-	string[] bodyPart = {
+    string[] bodyPart = {
   String.Format("client_id={0}", clientID),
   String.Format("client_secret={0}", clientSecret),
   String.Format("refresh_token={0}", refreshToken),
   "grant_type=refresh_token",
   };
 
-	var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
-	if (bodyParsed.Contains("access_token"))
-	{
-	  token = bodyParsed["access_token"].ToString();
-	  saveToken();
-	  GD.Print("saved new access token");
+    if (bodyParsed.Contains("access_token"))
+    {
+      token = bodyParsed["access_token"].ToString();
+      saveToken();
+      GD.Print("saved new access token");
 
-	  return true;
-	}
+      return true;
+    }
 
-	GD.Print("no new access token");
-	return false;
+    GD.Print("no new access token");
+    return false;
   }
 
   private void saveToken()
   {
-	var dir = new Directory();
-	if (!dir.DirExists(SAVE_DIR))
-	{
-	  dir.MakeDirRecursive(SAVE_DIR);
-	}
+    var dir = new Directory();
+    if (!dir.DirExists(SAVE_DIR))
+    {
+      dir.MakeDirRecursive(SAVE_DIR);
+    }
 
-	var file = new File();
-	var error = file.Open(save_path, File.ModeFlags.Write);
+    var file = new File();
+    var error = file.Open(save_path, File.ModeFlags.Write);
 
-	if (error == Error.Ok)
-	{
-	  var tokens = new Dictionary();
+    if (error == Error.Ok)
+    {
+      var tokens = new Dictionary();
 
-	  tokens["token"] = token;
-	  tokens["refreshToken"] = refreshToken;
+      tokens["token"] = token;
+      tokens["refreshToken"] = refreshToken;
 
-	  file.StoreVar(tokens);
-	  file.Close();
+      file.StoreVar(tokens);
+      file.Close();
 
-	  GD.Print("Token saved successfully");
-	}
+      GD.Print("Token saved successfully");
+    }
   }
 
   private void loadToken()
   {
-	var file = new File();
-	if (file.FileExists(save_path))
-	{
-	  var error = file.Open(save_path, File.ModeFlags.Read);
+    var file = new File();
+    if (file.FileExists(save_path))
+    {
+      var error = file.Open(save_path, File.ModeFlags.Read);
 
-	  if (error == Error.Ok)
-	  {
-		var tokens = file.GetVar() as Dictionary;
+      if (error == Error.Ok)
+      {
+        var tokens = file.GetVar() as Dictionary;
 
-		token = tokens["token"].ToString();
-		refreshToken = tokens["refreshToken"].ToString();
+        token = tokens["token"].ToString();
+        refreshToken = tokens["refreshToken"].ToString();
 
-		file.Close();
-		GD.Print("get local token");
-	  }
-	}
+        file.Close();
+        GD.Print("get local token");
+      }
+    }
   }
 
   private string loadHTML(string path)
   {
-	var file = new File();
-	var HTML = "<!DOCTYPE html><html><body><p>Logged In</p></body></html>";
+    var file = new File();
+    var HTML = "<!DOCTYPE html><html><body><p>Logged In</p></body></html>";
 
-	if (file.FileExists(path))
-	{
-	  file.Open(path, File.ModeFlags.Read);
-	  HTML = file.GetAsText().Replace("	", "\t").Insert(0, "\n");
-	  file.Close();
+    if (file.FileExists(path))
+    {
+      file.Open(path, File.ModeFlags.Read);
+      HTML = file.GetAsText().Replace("	", "\t").Insert(0, "\n");
+      file.Close();
 
-	  return HTML;
-	}
+      return HTML;
+    }
 
-	return HTML;
+    return HTML;
   }
 
   private async Task<Dictionary> makeRequest(string url, string[] header, HTTPClient.Method method, string body, String signal = "request_completed")
   {
-	HTTPRequest httpRequest = new HTTPRequest();
-	AddChild(httpRequest);
-	var Err = httpRequest.Request(url, header, true, method, body);
+    HTTPRequest httpRequest = new HTTPRequest();
+    AddChild(httpRequest);
+    var Err = httpRequest.Request(url, header, true, method, body);
 
-	if (Err != Error.Ok)
-	{
-	  GD.Print("An error occurred in HTTP request", Err);
-	  return null;
-	}
+    if (Err != Error.Ok)
+    {
+      GD.Print("An error occurred in HTTP request", Err);
+      return null;
+    }
 
 
-	var response = await ToSignal(httpRequest, signal);
-	JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
+    var response = await ToSignal(httpRequest, signal);
+    JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
 
-	return json.Result as Dictionary;
+    return json.Result as Dictionary;
   }
 }
 
