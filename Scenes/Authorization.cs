@@ -18,73 +18,11 @@ public class Authorization : Control
   string refreshToken;
   string token;
   string redirectUri;
-  const string SAVE_DIR = "user://token/";
+  const string SAVE_DIR = "user://auth/";
   string save_path = SAVE_DIR + "token.dat";
   const string HTML_REDIRECTION_PAGE = "res://Assets/Artwork/Home.html";
   TCP_Server redirectServer = new TCP_Server();
   [Signal] public delegate void playerAuthenticated(bool isAuthorized);
-
-  private void saveToken()
-  {
-	var dir = new Directory();
-	if (!dir.DirExists(SAVE_DIR))
-	{
-	  dir.MakeDirRecursive(SAVE_DIR);
-	}
-
-	var file = new File();
-	var error = file.OpenEncryptedWithPass(save_path, File.ModeFlags.Write, "game-test");
-
-	if (error == Error.Ok)
-	{
-	  var tokens = new Dictionary();
-
-	  tokens["token"] = token;
-	  tokens["refreshToken"] = refreshToken;
-
-	  file.StoreVar(tokens);
-	  file.Close();
-
-	  GD.Print("Token saved successfully");
-	}
-  }
-
-  private void loadToken()
-  {
-	var file = new File();
-	if (file.FileExists(save_path))
-	{
-	  var error = file.OpenEncryptedWithPass(save_path, File.ModeFlags.Read, "game-test");
-
-	  if (error == Error.Ok)
-	  {
-		var tokens = file.GetVar() as Dictionary;
-
-		token = tokens["token"].ToString();
-		refreshToken = tokens["refreshToken"].ToString();
-
-		file.Close();
-		GD.Print("get local token");
-	  }
-	}
-  }
-
-  private string loadHTML(string path)
-  {
-	var file = new File();
-	var HTML = "<!DOCTYPE html><html><body><p>Logged In</p></body></html>";
-
-	if (file.FileExists(path))
-	{
-	  file.Open(path, File.ModeFlags.Read);
-	  HTML = file.GetAsText().Replace("	", "\t").Insert(0, "\n");
-	  file.Close();
-
-	  return HTML;
-	}
-
-	return HTML;
-  }
 
   public override void _Ready()
   {
@@ -136,6 +74,7 @@ public class Authorization : Control
   {
 	GD.Print("Authorizing");
 	bool isAuthorized = false;
+
 	loadToken();
 	SetProcess(false);
 
@@ -156,7 +95,6 @@ public class Authorization : Control
 	else
 	{
 	  GD.Print("NO Authorized");
-
 	}
   }
 
@@ -196,20 +134,7 @@ public class Authorization : Control
   "scope=openId"
   };
 
-
-	HTTPRequest httpRequest = new HTTPRequest();
-	AddChild(httpRequest);
-
-	Error Err = httpRequest.Request(tokenServer, header, true, HTTPClient.Method.Post, String.Join("&", bodyPart));
-
-	if (Err != Error.Ok)
-	{
-	  GD.Print("An error occurred in HTTP request", Err);
-	}
-
-	var response = await ToSignal(httpRequest, "request_completed");
-	JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
-	var bodyParsed = json.Result as Dictionary;
+	var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
 	if (bodyParsed.Contains("access_token"))
 	{
@@ -235,13 +160,11 @@ public class Authorization : Control
 
 	if (token == null)
 	{
+	  GD.Print("token not found");
 	  return false;
-
 	}
 
-	string[] header ={
-  "Content-Type:application/x-www-form-urlencoded"
-  };
+	string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
 	string[] bodyPart = {
   String.Format("client_id={0}", clientID),
@@ -250,19 +173,7 @@ public class Authorization : Control
   "token_type_hint=access_token"
   };
 
-	HTTPRequest httpRequest = new HTTPRequest();
-	AddChild(httpRequest);
-	var Err = httpRequest.Request(tokenServer + "/introspect", header, true, HTTPClient.Method.Post, String.Join("&", bodyPart));
-
-	if (Err != Error.Ok)
-	{
-	  GD.Print("An error occurred in HTTP request", Err);
-	}
-
-
-	var response = await ToSignal(httpRequest, "request_completed");
-	JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
-	var bodyParsed = json.Result as Dictionary;
+	var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
 	if (bodyParsed.Contains("exp"))
 	{
@@ -289,14 +200,10 @@ public class Authorization : Control
 	if (refreshToken == null)
 	{
 	  GD.Print("refresh token not locally saved");
-
 	  return false;
-
 	}
 
-	string[] header ={
-  "Content-Type:application/x-www-form-urlencoded"
-  };
+	string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
 	string[] bodyPart = {
   String.Format("client_id={0}", clientID),
@@ -305,19 +212,7 @@ public class Authorization : Control
   "grant_type=refresh_token",
   };
 
-	HTTPRequest httpRequest = new HTTPRequest();
-	AddChild(httpRequest);
-	Error Err = httpRequest.Request(tokenServer, header, true, HTTPClient.Method.Post, String.Join("&", bodyPart));
-
-	if (Err != Error.Ok)
-	{
-	  GD.Print("An error occurred in HTTP request", Err);
-	}
-
-	var response = await ToSignal(httpRequest, "request_completed");
-
-	JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
-	var bodyParsed = json.Result as Dictionary;
+	var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
 	if (bodyParsed.Contains("access_token"))
 	{
@@ -330,6 +225,87 @@ public class Authorization : Control
 
 	GD.Print("no new access token");
 	return false;
+  }
+
+  private void saveToken()
+  {
+	var dir = new Directory();
+	if (!dir.DirExists(SAVE_DIR))
+	{
+	  dir.MakeDirRecursive(SAVE_DIR);
+	}
+
+	var file = new File();
+	var error = file.Open(save_path, File.ModeFlags.Write);
+
+	if (error == Error.Ok)
+	{
+	  var tokens = new Dictionary();
+
+	  tokens["token"] = token;
+	  tokens["refreshToken"] = refreshToken;
+
+	  file.StoreVar(tokens);
+	  file.Close();
+
+	  GD.Print("Token saved successfully");
+	}
+  }
+
+  private void loadToken()
+  {
+	var file = new File();
+	if (file.FileExists(save_path))
+	{
+	  var error = file.Open(save_path, File.ModeFlags.Read);
+
+	  if (error == Error.Ok)
+	  {
+		var tokens = file.GetVar() as Dictionary;
+
+		token = tokens["token"].ToString();
+		refreshToken = tokens["refreshToken"].ToString();
+
+		file.Close();
+		GD.Print("get local token");
+	  }
+	}
+  }
+
+  private string loadHTML(string path)
+  {
+	var file = new File();
+	var HTML = "<!DOCTYPE html><html><body><p>Logged In</p></body></html>";
+
+	if (file.FileExists(path))
+	{
+	  file.Open(path, File.ModeFlags.Read);
+	  HTML = file.GetAsText().Replace("	", "\t").Insert(0, "\n");
+	  file.Close();
+
+	  return HTML;
+	}
+
+	return HTML;
+  }
+
+  private async Task<Dictionary> makeRequest(string url, string[] header, HTTPClient.Method method, string body, String signal = "request_completed")
+  {
+	HTTPRequest httpRequest = new HTTPRequest();
+	AddChild(httpRequest);
+	var Err = httpRequest.Request(url, header, true, method, body);
+
+	if (Err != Error.Ok)
+	{
+	  GD.Print("An error occurred in HTTP request", Err);
+	  return null;
+	}
+
+
+	var response = await ToSignal(httpRequest, signal);
+	JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
+
+	return json.Result as Dictionary;
   }
 }
 
