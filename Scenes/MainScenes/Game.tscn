@@ -9,12 +9,16 @@
 background_mode = 4
 background_canvas_max_layer = 1
 glow_enabled = true
-glow_intensity = 2.42
-glow_strength = 0.81
+glow_levels/1 = true
+glow_levels/2 = true
+glow_levels/4 = true
+glow_levels/6 = true
+glow_levels/7 = true
+glow_intensity = 0.1
 glow_blend_mode = 0
-glow_hdr_threshold = 0.4
-glow_hdr_scale = 1.5
+glow_hdr_scale = 0.05
 glow_bicubic_upscale = true
+glow_high_quality = true
 
 [node name="Game" type="Node"]
 script = ExtResource( 2 )
