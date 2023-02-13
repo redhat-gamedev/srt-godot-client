@@ -34,13 +34,12 @@ public class Authorization : Control
 
       PORT = (int)clientConfig.GetValue("auth", "port");
       HOST = (String)clientConfig.GetValue("auth", "host");
-      BINDING = (String)clientConfig.GetValue("auth", "binding");
       clientID = (String)clientConfig.GetValue("auth", "client_id");
       clientSecret = (String)clientConfig.GetValue("auth", "client_secret");
       authServer = (String)clientConfig.GetValue("auth", "auth_api_url");
       tokenServer = (String)clientConfig.GetValue("auth", "token_api_url");
 
-      redirectUri = String.Format("http://{0}:{1}", BINDING, PORT);
+      redirectUri = String.Format("http://{0}:{1}", HOST, PORT);
 
       authorize();
     }
@@ -62,9 +61,14 @@ public class Authorization : Control
         SetProcess(false);
         await getTokenFromAuthCode(authCode);
 
-        connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 \r\n\r\n"));
-        connection.PutData(Encoding.ASCII.GetBytes(loadHTML(HTML_REDIRECTION_PAGE)));
+
+        // connection.PutData(Encoding.ASCII.GetBytes(loadHTML(HTML_REDIRECTION_PAGE)));
+        var response = loadHTML(HTML_REDIRECTION_PAGE);
+        connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 OK Content-Type: text/html; charset=utf-8 \r\n\r\n"));
+        connection.PutData(response.ToUTF8());
+
         GD.Print("stop server");
+        connection.DisconnectFromHost();
         redirectServer.Stop();
       }
 
@@ -109,7 +113,6 @@ public class Authorization : Control
   String.Format("redirect_uri={0}", redirectUri),
   "response_type=code",
   "scope=openId"
-
   };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));

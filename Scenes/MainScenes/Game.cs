@@ -167,9 +167,16 @@ public class Game : Node
     PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
 
     loginScreen = (LoginScreen)packedLoginScene.Instance();
+    this.AddChild(loginScreen);
+
+    if (OS.IsDebugBuild())
+    {
+      this._on_go_to_game(true);
+      return;
+    }
+
     authorization = authorization = new Authorization();
 
-    this.AddChild(loginScreen);
     this.AddChild(authorization);
 
     authorization.Connect("playerAuthenticated", this, "_on_go_to_game");
