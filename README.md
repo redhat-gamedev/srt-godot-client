@@ -41,3 +41,47 @@ will want to do one of the following:
   server use different ports.
 * Option 2. In the Server project, goto `Project->Export...` and export to your
   platform, then run the exported server.
+
+## Run authentication in development
+
+### Run keycloack locally using docker
+
+- fast way:
+`docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:20.0.3 start-dev`
+
+This will start Keycloak exposed on the local port 8080. It will also create an initial admin user with username admin and password admin.
+You can find more images here: https://quay.io/repository/keycloak/keycloak
+
+for more customization you can follow the official guide:
+https://www.keycloak.org/server/containers
+
+### Setup Keycloack
+You can follow this guide https://medium.com/@robert.broeckelmann/openid-connect-authorization-code-flow-with-red-hat-sso-d141dde4ed3f until "Setup Red Hat SSO Client Configuration". This guide works for keycloack too.
+
+#### create github auth app
+- Go in your github account and click settings
+
+- Go in Developer settings -> Oauth app then click on the button "new Oauth app"
+
+- Here you need to set the "Authorization callback URL" with the redirect uri from keycloak (see section below)
+
+-  "Homepage URL" is mandatory but you can use any words
+#### Setup github
+- Go to the "Identity provider" section and create a github provider, Then set ClientId and SecretId with your Github credentials.
+
+- Copy the Redirect URI and paste it in your github "Oauth app" configuration
+
+### Setup str-godot-client
+By default, in debug mode, the authentication is disabled, to activate it you need to configure some params:
+
+- Go in Resources/client.cfg and set these variables:
+
+```
+activate_auth_dev=true;
+port=<port selected for your callback uri>;
+host="<host selected for your callback uti";
+client_id="<set the clientId from your keycloack "user" section>";
+client_secret="<set the client secret from your keyckloack "user/credential" section>";
+auth_api_url= "<set the url api "/auth" url from kyecloack "Realm settings/OpenID Endpoint Configuration">";
+token_api_url= "<set the url api "/token" url from kyecloack "Realm settings/OpenID Endpoint Configuration">";
+```

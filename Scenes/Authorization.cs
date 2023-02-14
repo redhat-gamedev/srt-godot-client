@@ -10,7 +10,6 @@ public class Authorization : Control
 
   int PORT;
   string HOST;
-  string BINDING;
   string clientID;
   string clientSecret;
   string authServer;
@@ -112,7 +111,7 @@ public class Authorization : Control
   String.Format("client_id={0}", clientID),
   String.Format("redirect_uri={0}", redirectUri),
   "response_type=code",
-  "scope=openId"
+  "scope=openid"
   };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));

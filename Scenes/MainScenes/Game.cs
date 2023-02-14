@@ -169,11 +169,16 @@ public class Game : Node
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     this.AddChild(loginScreen);
 
-    if (OS.IsDebugBuild())
-    {
-      this._on_go_to_game(true);
-      return;
-    }
+ var clientConfig = new ConfigFile();
+
+	Godot.Error err = clientConfig.Load("res://Resources/client.cfg");	  
+	var  activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
+
+	if (OS.IsDebugBuild() && activateAuthDev == false)
+	{ 
+		this._on_go_to_game(true);
+		return;
+	}
 
     authorization = authorization = new Authorization();
 
