@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using redhatgamedev.srt.v1;
 using Serilog;
 
@@ -55,12 +56,12 @@ public class Game : Node
   public String myUuid = null;
 
   // Queues for processing incoming messages
-  public Queue<GameEvent> PlayerCreateQueue = new Queue<GameEvent>();
-  public Queue<GameEvent> PlayerUpdateQueue = new Queue<GameEvent>();
-  public Queue<GameEvent> PlayerDestroyQueue = new Queue<GameEvent>();
-  public Queue<GameEvent> MissileCreateQueue = new Queue<GameEvent>();
-  public Queue<GameEvent> MissileUpdateQueue = new Queue<GameEvent>();
-  public Queue<GameEvent> MissileDestroyQueue = new Queue<GameEvent>();
+  public ConcurrentQueue<GameEvent> PlayerCreateQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<GameEvent> PlayerUpdateQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<GameEvent> PlayerDestroyQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<GameEvent> MissileCreateQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<GameEvent> MissileUpdateQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<GameEvent> MissileDestroyQueue = new ConcurrentQueue<GameEvent>();
 
   /* PLAYER DEFAULTS AND CONFIG */
 
@@ -224,8 +225,13 @@ public class Game : Node
     // if we have a missile, or we're not ready to reload, set the indicator to
     // red, otherwise set the indicator to green
     if ((myShip.MyMissile != null) || (!myShip.MissileReady))
-    { missileReadyIndicator.Texture = missileReadyIndicatorNotReady; }
-    else missileReadyIndicator.Texture = missileReadyIndicatorReady;
+    {
+      missileReadyIndicator.Texture = missileReadyIndicatorNotReady;
+    }
+    else
+    {
+      missileReadyIndicator.Texture = missileReadyIndicatorReady;
+    }
   }
 
   void updateGameRadar()
@@ -275,9 +281,15 @@ public class Game : Node
 
   void ProcessPlayerCreate()
   {
-    while (PlayerCreateQueue.Count > 0)
+    GameEvent ge = null;
+    while (PlayerCreateQueue.TryDequeue(out ge))
     {
-      GameEvent ge = PlayerCreateQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing player create message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Debug($"Game.cs: Dequeuing player create message for {ge.Uuid}");
       PlayerShip newShip = CreateShipForUUID(ge.Uuid);
       newShip.UpdateFromGameEventBuffer(ge);
@@ -286,9 +298,15 @@ public class Game : Node
 
   void ProcessPlayerUpdate()
   {
-    while (PlayerUpdateQueue.Count > 0)
+    GameEvent ge = null;
+    while (PlayerUpdateQueue.TryDequeue(out ge))
     {
-      GameEvent ge = PlayerUpdateQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing player update message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Verbose($"Game.cs: Dequeuing player update message for {ge.Uuid}");
       PlayerShip ship = UpdateShipWithUUID(ge.Uuid);
       ship.UpdateFromGameEventBuffer(ge);
@@ -297,9 +315,15 @@ public class Game : Node
 
   void ProcessPlayerDestroy()
   {
-    while (PlayerDestroyQueue.Count > 0)
+    GameEvent ge = null;
+    while(PlayerDestroyQueue.TryDequeue(out ge))
     {
-      GameEvent ge = PlayerDestroyQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing player destroy message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Debug($"Game.cs: Dequeuing player destroy message for {ge.Uuid}");
       DestroyShipWithUUID(ge.Uuid, ge.HitPoints);
     }
@@ -307,9 +331,15 @@ public class Game : Node
 
   void ProcessMissileCreate()
   {
-    while (MissileCreateQueue.Count > 0)
+    GameEvent ge = null;
+    while (MissileCreateQueue.TryDequeue(out ge))
     {
-      GameEvent ge = MissileCreateQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing missile create message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Debug($"Game.cs: Dequeuing missile create message for {ge.Uuid} owner {ge.OwnerUuid}");
       SpaceMissile newMissile = CreateMissileForUUID(ge);
       newMissile.UpdateFromGameEventBuffer(ge);
@@ -318,9 +348,15 @@ public class Game : Node
 
   void ProcessMissileUpdate()
   {
-    while (MissileUpdateQueue.Count > 0)
+    GameEvent ge = null;
+    while (MissileUpdateQueue.TryDequeue(out ge))
     {
-      GameEvent ge = MissileUpdateQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing missile update message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Verbose($"Game.cs: Dequeuing missile update message for {ge.Uuid} owner {ge.OwnerUuid}");
       SpaceMissile missile = UpdateMissileWithUUID(ge);
       missile.UpdateFromGameEventBuffer(ge);
@@ -329,9 +365,15 @@ public class Game : Node
 
   void ProcessMissileDestroy()
   {
-    while (MissileDestroyQueue.Count > 0)
+    GameEvent ge = null;
+    while (MissileDestroyQueue.TryDequeue(out ge))
     {
-      GameEvent ge = MissileDestroyQueue.Dequeue();
+      if (null == ge)
+      {
+        _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for null!? SKIPPING!");
+        continue;
+      }
+
       _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for {ge.Uuid} owner {ge.OwnerUuid}");
       DestroyMissileWithUUID(ge.Uuid);
     }
@@ -764,6 +806,10 @@ public class Game : Node
     {
       missileInstance.Expire();
       missileObjects.Remove(uuid);
+    }
+    else
+    {
+      _serilogger.Debug($"Game.cs: DestroyMissileWithUUID TryGetValue for uuid {uuid} failed!");
     }
   }
 
