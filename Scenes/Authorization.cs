@@ -23,6 +23,7 @@ public class Authorization : Control
   TCP_Server redirectServer = new TCP_Server();
   [Signal] public delegate void playerAuthenticated(bool isAuthorized);
 
+  //Load the configuration and call the login process
   public override void _Ready()
   {
     var clientConfig = new ConfigFile();
@@ -44,6 +45,8 @@ public class Authorization : Control
     }
   }
 
+  // Wait for a Oauth callback from the Identity manager to receive an auth code, then ask for a token
+  // When the token is received close the server
   public override async void _Process(float delta)
   {
     if (redirectServer.IsConnectionAvailable())
@@ -60,8 +63,6 @@ public class Authorization : Control
         SetProcess(false);
         await getTokenFromAuthCode(authCode);
 
-
-        // connection.PutData(Encoding.ASCII.GetBytes(loadHTML(HTML_REDIRECTION_PAGE)));
         var response = loadHTML(HTML_REDIRECTION_PAGE);
         connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 OK Content-Type: text/html; charset=utf-8 \r\n\r\n"));
         connection.PutData(response.ToUTF8());
@@ -78,13 +79,20 @@ public class Authorization : Control
     GD.Print("Authorizing");
     bool isAuthorized = false;
 
+   // Load the access token from a previous login
     loadToken();
     SetProcess(false);
 
+    // verify if the token exists locally and call the API "/introspect to verify if the token is expired
     if (!(isAuthorized = await isTokenValid()))
     {
+      // verify if a refresh token exists locally and, ask for a new access token from the API /token.
       if (!(isAuthorized = await refreshTokens()))
       {
+        // Standard auth flow:
+        // 1) Open a browser to do a Oauth2 authentication and obtains an auth code
+        // 2) ask the token to the /token api
+        // 3) save it locally and send a signal to the main scene to enable the next player screen
         getAuthCode();
       };
     }
@@ -108,10 +116,10 @@ public class Authorization : Control
     redirectServer.Listen((ushort)PORT, HOST);
 
     string[] bodyPart = {
-  String.Format("client_id={0}", clientID),
-  String.Format("redirect_uri={0}", redirectUri),
-  "response_type=code",
-  "scope=openid"
+    String.Format("client_id={0}", clientID),
+    String.Format("redirect_uri={0}", redirectUri),
+    "response_type=code",
+    "scope=openid"
   };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
