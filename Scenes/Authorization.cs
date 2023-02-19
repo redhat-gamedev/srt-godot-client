@@ -60,7 +60,6 @@ public class Authorization : Control
       GD.Print(authCode);
       if (request != "" && authCode != null)
       {
-        SetProcess(false);
         await getTokenFromAuthCode(authCode);
 
         var response = loadHTML(HTML_REDIRECTION_PAGE);
@@ -79,10 +78,8 @@ public class Authorization : Control
     GD.Print("Authorizing");
     bool isAuthorized = false;
 
-   // Load the access token from a previous login
+    // Load the access token from a previous login
     loadToken();
-    SetProcess(false);
-
     // verify if the token exists locally and call the API "/introspect to verify if the token is expired
     if (!(isAuthorized = await isTokenValid()))
     {
@@ -112,14 +109,13 @@ public class Authorization : Control
   private void getAuthCode()
   {
     GD.Print("call login - ask auth code");
-    SetProcess(true);
     redirectServer.Listen((ushort)PORT, HOST);
 
     string[] bodyPart = {
-    String.Format("client_id={0}", clientID),
-    String.Format("redirect_uri={0}", redirectUri),
-    "response_type=code",
-    "scope=openid"
+  String.Format("client_id={0}", clientID),
+  String.Format("redirect_uri={0}", redirectUri),
+  "response_type=code",
+  "scope=openid"
   };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
