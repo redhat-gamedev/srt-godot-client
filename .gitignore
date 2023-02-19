@@ -10,3 +10,5 @@ mono_crash*
 
 .vs/
 .vscode
+
+Resources/client.cfg
