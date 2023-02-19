@@ -42,6 +42,9 @@ will want to do one of the following:
 * Option 2. In the Server project, goto `Project->Export...` and export to your
   platform, then run the exported server.
 
+#### Configuration
+Go in the Resources folder, copy and rename the file client.cfg.template in client.cfg. Here you can set parameters like authentication and server url.
+
 ## Run authentication in development
 
 ### Run keycloack locally using docker
