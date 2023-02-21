@@ -9,7 +9,7 @@ public class LoginScreen : Control
 
   LineEdit textField;
 
-	[Signal] public delegate void retryAuthorization();
+  [Signal] public delegate void retryAuthorization();
 
   public override void _Ready()
   {
@@ -20,7 +20,7 @@ public class LoginScreen : Control
     textField.GrabFocus();
 
     // TODO: need to interrogate server for the initial defaults for things like
-	  // missile speed
+    // missile speed
   }
 
   private void _on_JoinButton_button_up()
@@ -33,7 +33,7 @@ public class LoginScreen : Control
     if (!success)
     {
       _serilogger.Information($"LoginScreen: join failed TODO tell player why");
-      // TODO: alert errors or something
+      // TODO: alert errors or something 
     }
     else
     {
@@ -45,10 +45,9 @@ public class LoginScreen : Control
     }
   }
 
-	private void _on_RetryButton_pressed()
-{
-	GD.Print("retry auth");
-	EmitSignal("retryAuthorization");
-}
-
+  private void _on_RetryButton_pressed()
+  {
+    GD.Print("retry auth");
+    EmitSignal("retryAuthorization");
+  }
 }

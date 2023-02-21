@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 public class Authorization : Control
 {
+  Game MyGame;
+
   public Serilog.Core.Logger _serilogger;
 
   int PORT;
@@ -26,6 +28,9 @@ public class Authorization : Control
   //Load the configuration and call the login process
   public override void _Ready()
   {
+    MyGame = GetNode<Game>("/root/Game");
+    _serilogger = MyGame._serilogger;
+
     var clientConfig = new ConfigFile();
 
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
@@ -58,6 +63,7 @@ public class Authorization : Control
 
       string authCode = request.Split("&code")[1].Split("=")[1].Split(" ")[0];
       _serilogger.Information(authCode);
+
       if (request != "" && authCode != null)
       {
         await getTokenFromAuthCode(authCode);
@@ -96,7 +102,7 @@ public class Authorization : Control
 
     if (isAuthorized)
     {
-       _serilogger.Information("Authorized");
+      _serilogger.Information("Authorized");
       EmitSignal("playerAuthenticated", isAuthorized);
 
     }
@@ -111,12 +117,13 @@ public class Authorization : Control
     _serilogger.Information("call login - ask auth code");
     redirectServer.Listen((ushort)PORT, HOST);
 
-    string[] bodyPart = {
+    string[] bodyPart =
+    {
       String.Format("client_id={0}", clientID),
       String.Format("redirect_uri={0}", redirectUri),
       "response_type=code",
       "scope=openid"
-  };
+    };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
 
@@ -131,14 +138,15 @@ public class Authorization : Control
   };
 
 
-    string[] bodyPart = {
+    string[] bodyPart = 
+    {
       String.Format("code={0}", authCode),
       String.Format("client_id={0}", clientID),
       String.Format("client_secret={0}", clientSecret),
       String.Format("redirect_uri={0}", redirectUri),
       "grant_type=authorization_code",
       "scope=openId"
-  };
+    };
 
     var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
@@ -172,22 +180,19 @@ public class Authorization : Control
 
     string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
-    string[] bodyPart = {
+    string[] bodyPart =
+    {
       String.Format("client_id={0}", clientID),
       String.Format("client_secret={0}", clientSecret),
       String.Format("token={0}", token),
       "token_type_hint=access_token"
-  };
+    };
 
     var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
     if (bodyParsed.Contains("exp"))
     {
       var expiration = Double.Parse(bodyParsed["exp"].ToString());
-
-      _serilogger.Information(expiration);
-
-      _serilogger.Information(DateTimeOffset.Now.ToUnixTimeSeconds());
 
       if (expiration > DateTimeOffset.Now.ToUnixTimeSeconds())
       {
@@ -211,12 +216,13 @@ public class Authorization : Control
 
     string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
-    string[] bodyPart = {
+    string[] bodyPart = 
+    {
       String.Format("client_id={0}", clientID),
       String.Format("client_secret={0}", clientSecret),
       String.Format("refresh_token={0}", refreshToken),
-      "grant_type=refresh_token",
-  };
+      "grant_type=refresh_token"
+    };
 
     var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
 
@@ -306,7 +312,6 @@ public class Authorization : Control
       _serilogger.Information("An error occurred in HTTP request", Err);
       return null;
     }
-
 
     var response = await ToSignal(httpRequest, signal);
     JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
