@@ -51,13 +51,13 @@ public class Authorization : Control
   {
     if (redirectServer.IsConnectionAvailable())
     {
-      GD.Print("get Auth Code from callback");
+      _serilogger.Information("get Auth Code from callback");
       StreamPeerTCP connection = redirectServer.TakeConnection();
 
       string request = connection.GetString(connection.GetAvailableBytes());
 
       string authCode = request.Split("&code")[1].Split("=")[1].Split(" ")[0];
-      GD.Print(authCode);
+      _serilogger.Information(authCode);
       if (request != "" && authCode != null)
       {
         await getTokenFromAuthCode(authCode);
@@ -66,7 +66,7 @@ public class Authorization : Control
         connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 OK Content-Type: text/html; charset=utf-8 \r\n\r\n"));
         connection.PutData(response.ToUTF8());
 
-        GD.Print("stop server");
+        _serilogger.Information("stop server");
         connection.DisconnectFromHost();
         redirectServer.Stop();
       }
@@ -75,7 +75,7 @@ public class Authorization : Control
   }
   public async void authorize()
   {
-    GD.Print("Authorizing");
+    _serilogger.Information("Authorizing");
     bool isAuthorized = false;
 
     // Load the access token from a previous login
@@ -96,26 +96,26 @@ public class Authorization : Control
 
     if (isAuthorized)
     {
-      GD.Print("Authorized");
+       _serilogger.Information("Authorized");
       EmitSignal("playerAuthenticated", isAuthorized);
 
     }
     else
     {
-      GD.Print("NO Authorized");
+      _serilogger.Information("NO Authorized");
     }
   }
 
   private void getAuthCode()
   {
-    GD.Print("call login - ask auth code");
+    _serilogger.Information("call login - ask auth code");
     redirectServer.Listen((ushort)PORT, HOST);
 
     string[] bodyPart = {
-  String.Format("client_id={0}", clientID),
-  String.Format("redirect_uri={0}", redirectUri),
-  "response_type=code",
-  "scope=openid"
+      String.Format("client_id={0}", clientID),
+      String.Format("redirect_uri={0}", redirectUri),
+      "response_type=code",
+      "scope=openid"
   };
 
     string url = String.Format("{0}?{1}", authServer, String.Join("&", bodyPart));
@@ -125,19 +125,19 @@ public class Authorization : Control
 
   private async Task<bool> getTokenFromAuthCode(string authCode)
   {
-    GD.Print("get Token from AuthCode");
+    _serilogger.Information("get Token from AuthCode");
     string[] header ={
-  "Content-Type:application/x-www-form-urlencoded"
+    "Content-Type:application/x-www-form-urlencoded"
   };
 
 
     string[] bodyPart = {
-  String.Format("code={0}", authCode),
-  String.Format("client_id={0}", clientID),
-  String.Format("client_secret={0}", clientSecret),
-  String.Format("redirect_uri={0}", redirectUri),
-  "grant_type=authorization_code",
-  "scope=openId"
+      String.Format("code={0}", authCode),
+      String.Format("client_id={0}", clientID),
+      String.Format("client_secret={0}", clientSecret),
+      String.Format("redirect_uri={0}", redirectUri),
+      "grant_type=authorization_code",
+      "scope=openId"
   };
 
     var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
@@ -153,7 +153,7 @@ public class Authorization : Control
     }
     else
     {
-      GD.Print("Error: no token received");
+      _serilogger.Information("Error: no token received");
       EmitSignal("playerAuthenticated", false);
       return false;
     }
@@ -162,21 +162,21 @@ public class Authorization : Control
 
   private async Task<bool> isTokenValid()
   {
-    GD.Print("validate token");
+    _serilogger.Information("validate token");
 
     if (token == null)
     {
-      GD.Print("token not found");
+      _serilogger.Information("token not found");
       return false;
     }
 
     string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
     string[] bodyPart = {
-  String.Format("client_id={0}", clientID),
-  String.Format("client_secret={0}", clientSecret),
-  String.Format("token={0}", token),
-  "token_type_hint=access_token"
+      String.Format("client_id={0}", clientID),
+      String.Format("client_secret={0}", clientSecret),
+      String.Format("token={0}", token),
+      "token_type_hint=access_token"
   };
 
     var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
@@ -185,9 +185,9 @@ public class Authorization : Control
     {
       var expiration = Double.Parse(bodyParsed["exp"].ToString());
 
-      GD.Print(expiration);
+      _serilogger.Information(expiration);
 
-      GD.Print(DateTimeOffset.Now.ToUnixTimeSeconds());
+      _serilogger.Information(DateTimeOffset.Now.ToUnixTimeSeconds());
 
       if (expiration > DateTimeOffset.Now.ToUnixTimeSeconds())
       {
@@ -195,27 +195,27 @@ public class Authorization : Control
       }
     }
 
-    GD.Print("token expired");
+    _serilogger.Information("token expired");
     return false;
 
   }
 
   private async Task<bool> refreshTokens()
   {
-    GD.Print("fetch refresh - ask new access token");
+    _serilogger.Information("fetch refresh - ask new access token");
     if (refreshToken == null)
     {
-      GD.Print("refresh token not locally saved");
+      _serilogger.Information("refresh token not locally saved");
       return false;
     }
 
     string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
     string[] bodyPart = {
-  String.Format("client_id={0}", clientID),
-  String.Format("client_secret={0}", clientSecret),
-  String.Format("refresh_token={0}", refreshToken),
-  "grant_type=refresh_token",
+      String.Format("client_id={0}", clientID),
+      String.Format("client_secret={0}", clientSecret),
+      String.Format("refresh_token={0}", refreshToken),
+      "grant_type=refresh_token",
   };
 
     var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
@@ -224,12 +224,12 @@ public class Authorization : Control
     {
       token = bodyParsed["access_token"].ToString();
       saveToken();
-      GD.Print("saved new access token");
+      _serilogger.Information("saved new access token");
 
       return true;
     }
 
-    GD.Print("no new access token");
+    _serilogger.Information("no new access token");
     return false;
   }
 
@@ -254,7 +254,7 @@ public class Authorization : Control
       file.StoreVar(tokens);
       file.Close();
 
-      GD.Print("Token saved successfully");
+      _serilogger.Information("Token saved successfully");
     }
   }
 
@@ -273,7 +273,7 @@ public class Authorization : Control
         refreshToken = tokens["refreshToken"].ToString();
 
         file.Close();
-        GD.Print("get local token");
+        _serilogger.Information("get local token");
       }
     }
   }
@@ -303,7 +303,7 @@ public class Authorization : Control
 
     if (Err != Error.Ok)
     {
-      GD.Print("An error occurred in HTTP request", Err);
+      _serilogger.Information("An error occurred in HTTP request", Err);
       return null;
     }
 

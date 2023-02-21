@@ -69,7 +69,7 @@ You can follow this guide https://medium.com/@robert.broeckelmann/openid-connect
 - Here you need to set the "Authorization callback URL" with the redirect uri from keycloak (see section below)
 
 -  "Homepage URL" is mandatory but you can use any words
-#### Setup github
+#### Setup github inside keycloack
 - Go to the "Identity provider" section and create a github provider, Then set ClientId and SecretId with your Github credentials.
 
 - Copy the Redirect URI and paste it in your github "Oauth app" configuration

@@ -19,6 +19,7 @@ public class Game : Node
   private Stopwatch GameStopwatch = new Stopwatch();
 
   Boolean inGame = false;
+  Boolean activateAuthDev = false;
 
   // UI elements
   CanvasLayer gameUI;
@@ -90,6 +91,9 @@ public class Game : Node
       _serilogger.Information("Game.cs: Local user config not found, defaulting to built-in");
       err = clientConfig.Load("Resources/client.cfg");
     }
+    
+    // enable/disable authentication in dev mode
+    activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
 
     int DesiredLogLevel = 3;
 
@@ -168,17 +172,11 @@ public class Game : Node
 
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     this.AddChild(loginScreen);
-
- var clientConfig = new ConfigFile();
-
-	Godot.Error err = clientConfig.Load("res://Resources/client.cfg");	  
-	var  activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
-
-	if (OS.IsDebugBuild() && activateAuthDev == false)
-	{ 
-		this._on_go_to_game(true);
-		return;
-	}
+    if (OS.IsDebugBuild() && activateAuthDev == false)
+    { 
+      this._on_go_to_game(true);
+      return;
+    }
 
     authorization = authorization = new Authorization();
 
