@@ -91,7 +91,7 @@ public class Game : Node
       _serilogger.Information("Game.cs: Local user config not found, defaulting to built-in");
       err = clientConfig.Load("Resources/client.cfg");
     }
-    
+
     // enable/disable authentication in dev mode
     activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
 
@@ -172,9 +172,12 @@ public class Game : Node
 
     loginScreen = (LoginScreen)packedLoginScene.Instance();
     this.AddChild(loginScreen);
+
     if (OS.IsDebugBuild() && activateAuthDev == false)
-    { 
-      this._on_go_to_game(true);
+    {
+      loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+
       return;
     }
 
@@ -251,7 +254,7 @@ public class Game : Node
 
   void updateGameRadar()
   {
-    // the radar circle is approximately 280x280 and its center is 
+    // the radar circle is approximately 280x280 and its center is
     // approximately 169,215 on the image
 
     // delete all the radar blips
@@ -519,7 +522,7 @@ public class Game : Node
       }
 
       // https://gdscript.com/solutions/godot-timing-tutorial/
-      // check if we should update the debug UI, which itself should only be done if 
+      // check if we should update the debug UI, which itself should only be done if
       // we are in a graphical mode
       // TODO: only if in graphical debug mode
       // TODO: should also probably use timer node
@@ -538,7 +541,7 @@ public class Game : Node
   public bool JoinGameAsPlayer(string playerName)
   {
     // TODO: if not connected, try again to connect to server
-    _serilogger.Debug($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
+    _serilogger.Information($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
 
     // construct a join message
     Security scb = new Security();
@@ -578,8 +581,8 @@ public class Game : Node
 
     // TODO: we might need to do something in the case where we end up creating ships before the announce message
     //       has been processed. Right now the code will create a ship as soon as it receives an update for a ship
-    //       it doesn't know about, but that could happen before we've received the announce. It's nice to 
-    //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on 
+    //       it doesn't know about, but that could happen before we've received the announce. It's nice to
+    //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on
     //       joining
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
@@ -607,7 +610,7 @@ public class Game : Node
     else return shipInstance;
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
-    // where the server is using the ShipThing, this is using the PlayerShip. It may 
+    // where the server is using the ShipThing, this is using the PlayerShip. It may
     // or may not be significant down the line
     playerObjects.Add(uuid, shipInstance);
 
@@ -887,24 +890,46 @@ public class Game : Node
     }
   }
 
-  public void _on_go_to_game(bool isAuthorized)
+  void _on_go_to_game(bool isAuthorized)
   {
-    if (isAuthorized)
+    if (isAuthorized == false)
     {
-      GD.Print("User authenticated, go to LoginScreen");
-      loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+      _serilogger.Information("User no authenticated,retry");
       loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+
+      return;
     }
-    else
-    {
-      GD.Print("User no authenticated,retry");
-      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
-    }
+
+    loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+    loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+
+    this.myUuid = authorization.getUserId();
+    this.goToTheGame(myUuid);
   }
 
-  public void _on_retry_auth()
+  void _on_retry_auth()
   {
-    GD.Print("Retry authorization");
+    _serilogger.Information("Retry authorization");
     authorization.authorize();
+  }
+
+  public void goToTheGame(string userId)
+  {
+    {
+      bool success = this.JoinGameAsPlayer(userId);
+
+      if (!success)
+      {
+        _serilogger.Information($"LoginScreen: join failed TODO tell player why");
+        // TODO: alert errors or something
+      }
+      else
+      {
+        // since we successfully joined the game, we can remove the login screen
+        // then go to main game window
+        loginScreen.QueueFree();
+        this.initializeGameUI();
+      }
+    }
   }
 }

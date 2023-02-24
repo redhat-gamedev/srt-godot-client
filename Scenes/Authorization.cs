@@ -37,8 +37,8 @@ public class Authorization : Control
     if (err == Godot.Error.Ok)
     {
 
-      PORT = (int)clientConfig.GetValue("auth", "port");
       HOST = (String)clientConfig.GetValue("auth", "host");
+      PORT = Convert.ToInt32(clientConfig.GetValue("auth", "port"));
       clientID = (String)clientConfig.GetValue("auth", "client_id");
       clientSecret = (String)clientConfig.GetValue("auth", "client_secret");
       authServer = (String)clientConfig.GetValue("auth", "auth_api_url");
@@ -104,12 +104,29 @@ public class Authorization : Control
     {
       _serilogger.Information("Authorized");
       EmitSignal("playerAuthenticated", isAuthorized);
-
     }
     else
     {
-      _serilogger.Information("NO Authorized");
+      _serilogger.Information("No Authorized");
     }
+  }
+
+  public string getUserId()
+  {
+    if (token == null)
+    {
+      _serilogger.Information("token not found");
+      return null;
+    }
+
+    var payload = this.decodeJWTPayload(token);
+
+    if (!payload.Contains("sub"))
+    {
+      return null;
+    }
+
+    return this.decodeJWTPayload(token)["sub"].ToString();
   }
 
   private void getAuthCode()
@@ -138,7 +155,7 @@ public class Authorization : Control
   };
 
 
-    string[] bodyPart = 
+    string[] bodyPart =
     {
       String.Format("code={0}", authCode),
       String.Format("client_id={0}", clientID),
@@ -216,7 +233,7 @@ public class Authorization : Control
 
     string[] header = { "Content-Type:application/x-www-form-urlencoded" };
 
-    string[] bodyPart = 
+    string[] bodyPart =
     {
       String.Format("client_id={0}", clientID),
       String.Format("client_secret={0}", clientSecret),
@@ -318,5 +335,25 @@ public class Authorization : Control
 
     return json.Result as Dictionary;
   }
-}
 
+  private Dictionary decodeJWTPayload(string jwt)
+  {
+    var parts = jwt.Split(".");
+    var payloadPart = parts[1];
+
+    switch (payloadPart.Length() % 4)
+    {
+      case 2:
+        payloadPart += "==";
+        break;
+      case 3:
+        payloadPart += "=";
+        break;
+    }
+
+    var payload = Marshalls.Base64ToRaw(payloadPart.Replace("_", "/").Replace("-", "+"));
+    var json = JSON.Parse(Encoding.UTF8.GetString(payload as byte[]));
+
+    return json.Result as Dictionary;
+  }
+}

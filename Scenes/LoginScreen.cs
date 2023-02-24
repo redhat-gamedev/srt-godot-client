@@ -28,21 +28,7 @@ public class LoginScreen : Control
     _serilogger.Information($"LoginScreen: trying to login as {textField.Text}");
     MyGame.myUuid = textField.Text;
 
-    //EmitSignal("SetPlayerName", textField.Text);
-    bool success = MyGame.JoinGameAsPlayer(textField.Text);
-    if (!success)
-    {
-      _serilogger.Information($"LoginScreen: join failed TODO tell player why");
-      // TODO: alert errors or something 
-    }
-    else
-    {
-      // since we successfully joined the game, we can remove this node
-      // which is the login screen. removing the login screen "displays"
-      // the main game window
-      QueueFree();
-      MyGame.initializeGameUI();
-    }
+    MyGame.goToTheGame(textField.Text);
   }
 
   private void _on_RetryButton_pressed()
