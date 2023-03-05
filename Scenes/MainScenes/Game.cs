@@ -151,9 +151,6 @@ public class Game : Node
     _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
 
-    serverConnection = new ServerConnection();
-    this.AddChild(serverConnection);
-
     LoadConfig();
 
     // fetch nodes we need
@@ -168,10 +165,14 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
-    // skip auth if we are in dev mode and activateAuthDev flag is disabled
+    // skip auth in dev mode and try to connect to the server
     if (OS.IsDebugBuild() && activateAuthDev == false)
     {
-      this.goToTheGame("dev-userID");
+      serverConnection = new ServerConnection();
+      this.AddChild(serverConnection);
+      this.myUuid = "test-userId";
+
+      serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
       return;
     }
 
@@ -184,8 +185,8 @@ public class Game : Node
     this.AddChild(authorization);
 
     // listening for the Auth results: fail or success
-    authorization.Connect("playerAuthenticated", this, "_on_go_to_game");
-    authorization.Connect("retryAuthorization", this, "_on_retry_auth");
+    authorization.Connect("playerAuthenticated", this, "_on_is_player_authorized");
+    loginScreen.Connect("retryAuthorization", this, "_on_retry_auth");
   }
 
   public void displayGameOverScreen()
@@ -886,7 +887,7 @@ public class Game : Node
     }
   }
 
-  void _on_go_to_game(bool isAuthorized)
+  void _on_is_player_authorized(bool isAuthorized)
   {
     // if auth fail show Not authorized screen and a retry button
     if (isAuthorized == false)
@@ -898,13 +899,21 @@ public class Game : Node
     }
 
     loginScreen.QueueFree();
-    this.goToTheGame(authorization.getUserId());
+
+    // user is authenticated then we can try to connect to the server
+    serverConnection = new ServerConnection();
+    this.AddChild(serverConnection);
+    this.myUuid = authorization.getUserId();
+
+    serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
   }
 
-  void _on_retry_auth()
+  void _on_is_server_connected(bool connected)
   {
-    _serilogger.Information("Retry authorization");
-    authorization.authorize();
+    if (connected && this.myUuid != null)
+    {
+      this.goToTheGame(this.myUuid);
+    }
   }
 
   public void goToTheGame(string userId)
@@ -921,5 +930,11 @@ public class Game : Node
 
       _serilogger.Information($"join failed TODO tell player why");
     }
+  }
+
+  void _on_retry_auth()
+  {
+    _serilogger.Information("Retry authorization");
+    authorization.authorize();
   }
 }
