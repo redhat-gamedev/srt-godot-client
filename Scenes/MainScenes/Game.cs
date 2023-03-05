@@ -168,28 +168,24 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
-    PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
-
-    loginScreen = (LoginScreen)packedLoginScene.Instance();
-    this.AddChild(loginScreen);
-
+    // skip auth if we are in dev mode and activateAuthDev flag is disabled
     if (OS.IsDebugBuild() && activateAuthDev == false)
     {
-      loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
-      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
-
+      this.goToTheGame("dev-userID");
       return;
     }
 
+    PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
+
+    loginScreen = (LoginScreen)packedAuthScene.Instance();
     authorization = authorization = new Authorization();
 
+    this.AddChild(loginScreen);
     this.AddChild(authorization);
 
+    // listening for the Auth results: fail or success
     authorization.Connect("playerAuthenticated", this, "_on_go_to_game");
-    loginScreen.Connect("retryAuthorization", this, "_on_retry_auth");
-
-    // TODO: check for server connection and do some retries if something is wrong
-    // if lots of fails, pop up an error screen (and let player do server config?)
+    authorization.Connect("retryAuthorization", this, "_on_retry_auth");
   }
 
   public void displayGameOverScreen()
@@ -538,16 +534,16 @@ public class Game : Node
     ProcessPlayerDestroy();
   }
 
-  public bool JoinGameAsPlayer(string playerName)
+  public bool JoinGameAsPlayer(string myUuid)
   {
     // TODO: if not connected, try again to connect to server
-    _serilogger.Information($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
+    _serilogger.Information($"Game.cs: Sending join with UUID: {myUuid}");
 
     // construct a join message
     Security scb = new Security();
 
     //scb.Uuid = ServerConnection.UUID;
-    scb.Uuid = playerName;
+    scb.Uuid = myUuid;
 
     scb.security_type = Security.SecurityType.SecurityTypeJoin;
     serverConnection.SendSecurity(scb);
@@ -892,6 +888,7 @@ public class Game : Node
 
   void _on_go_to_game(bool isAuthorized)
   {
+    // if auth fail show Not authorized screen and a retry button
     if (isAuthorized == false)
     {
       _serilogger.Information("User no authenticated,retry");
@@ -900,11 +897,8 @@ public class Game : Node
       return;
     }
 
-    loginScreen.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
-    loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
-
-    this.myUuid = authorization.getUserId();
-    this.goToTheGame(myUuid);
+    loginScreen.QueueFree();
+    this.goToTheGame(authorization.getUserId());
   }
 
   void _on_retry_auth()
@@ -916,20 +910,16 @@ public class Game : Node
   public void goToTheGame(string userId)
   {
     {
-      bool success = this.JoinGameAsPlayer(userId);
+      myUuid = userId;
+      bool success = this.JoinGameAsPlayer(myUuid);
 
-      if (!success)
+      if (success)
       {
-        _serilogger.Information($"LoginScreen: join failed TODO tell player why");
-        // TODO: alert errors or something
-      }
-      else
-      {
-        // since we successfully joined the game, we can remove the login screen
-        // then go to main game window
-        loginScreen.QueueFree();
         this.initializeGameUI();
+        return;
       }
+
+      _serilogger.Information($"join failed TODO tell player why");
     }
   }
 }
