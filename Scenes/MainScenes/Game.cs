@@ -14,7 +14,6 @@ public class Game : Node
 
   private ServerConnection serverConnection;
   private LoginScreen loginScreen;
-  private Authorization authorization;
 
   private Stopwatch GameStopwatch = new Stopwatch();
 
@@ -165,28 +164,20 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
-    // skip auth in dev mode and try to connect to the server
+    // skip the authentication flow in Debug mode and if we don't want to test it
     if (OS.IsDebugBuild() && activateAuthDev == false)
     {
-      serverConnection = new ServerConnection();
-      this.AddChild(serverConnection);
-      this.myUuid = "test-userId";
-
-      serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
+      this._on_login_success("test-userId");
       return;
     }
 
     PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
 
     loginScreen = (LoginScreen)packedAuthScene.Instance();
-    authorization = authorization = new Authorization();
-
     this.AddChild(loginScreen);
-    this.AddChild(authorization);
 
-    // listening for the Auth results: fail or success
-    authorization.Connect("playerAuthenticated", this, "_on_is_player_authorized");
-    loginScreen.Connect("retryAuthorization", this, "_on_retry_auth");
+    // wait a notification the login flow
+    loginScreen.Connect("loginSuccess", this, "_on_login_success");
   }
 
   public void displayGameOverScreen()
@@ -887,40 +878,22 @@ public class Game : Node
     }
   }
 
-  void _on_is_player_authorized(bool isAuthorized)
+  void _on_login_success(string userId)
   {
-    // if auth fail show Not authorized screen and a retry button
-    if (isAuthorized == false)
-    {
-      _serilogger.Information("User no authenticated,retry");
-      loginScreen.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
-
-      return;
-    }
-
-    loginScreen.QueueFree();
-
-    // user is authenticated then we can try to connect to the server
+    // user is authenticated. Now we try to connect to the server
     serverConnection = new ServerConnection();
     this.AddChild(serverConnection);
-    this.myUuid = authorization.getUserId();
+    this.myUuid = userId;
 
     serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
   }
 
-  void _on_is_server_connected(bool connected)
+  void _on_is_server_connected(bool isServerConnected)
   {
-    if (connected && this.myUuid != null)
+    // At this point the user is authenticated and the server is connected. Now we can go to the game
+    if (isServerConnected && this.myUuid != null)
     {
-      this.goToTheGame(this.myUuid);
-    }
-  }
-
-  public void goToTheGame(string userId)
-  {
-    {
-      myUuid = userId;
-      bool success = this.JoinGameAsPlayer(myUuid);
+      bool success = this.JoinGameAsPlayer(this.myUuid);
 
       if (success)
       {
@@ -930,11 +903,5 @@ public class Game : Node
 
       _serilogger.Information($"join failed TODO tell player why");
     }
-  }
-
-  void _on_retry_auth()
-  {
-    _serilogger.Information("Retry authorization");
-    authorization.authorize();
   }
 }
