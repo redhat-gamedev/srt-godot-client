@@ -132,7 +132,7 @@ public class Authorization : Control
   private void getAuthCode()
   {
     _serilogger.Information("call login - ask auth code");
-    redirectServer.Listen((ushort)PORT, HOST);
+    redirectServer.Listen((ushort)PORT, "127.0.0.1");
 
     string[] bodyPart =
     {

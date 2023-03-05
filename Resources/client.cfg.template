@@ -10,12 +10,12 @@ log_level=4 ; 0=fatal, 1=err, 2=warn, 3=inf, 4=dbg, 5=verbose
 
 [auth]
 activate_auth_dev=false; enable/disable auth in dev mode
-port="local port"; example 31419
-host="local hostname"; example: 127.0.0.1
+port="<local port>"; example 31419
+host="<local hostname>"; example: 127.0.0.1
 
-;Identity and Access management config 
-client_id="<keycloack client id>";
-client_secret="<keycloack secret>";
-auth_api_url= "<keycloack auth api>";
-token_api_url= "<keycloack token api>";
+;Identity and Access management config
+client_id="<keycloak client id>";
+client_secret="<keycloak secret>";
+auth_api_url= "<keycloak auth api>";
+token_api_url= "<keycloak token api>";
 
