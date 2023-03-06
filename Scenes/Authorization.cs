@@ -20,8 +20,11 @@ public class Authorization : Control
   string token;
   string redirectUri;
   const string SAVE_DIR = "user://auth/";
-  string save_path = SAVE_DIR + "token.dat";
+  const string save_path = SAVE_DIR + "token.dat";
   const string HTML_REDIRECTION_PAGE = "res://Assets/Artwork/Home.html";
+  const string DEFAULT_ADDRESS = "127.0.0.1";
+  const string DEFAULT_PORT = "31419";
+
   TCP_Server redirectServer = new TCP_Server();
   [Signal] public delegate void playerAuthenticated(bool isAuthorized);
 
@@ -36,13 +39,15 @@ public class Authorization : Control
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
     if (err == Godot.Error.Ok)
     {
+      var configPort = (string)clientConfig.GetValue("auth", "port");
+      string configAddress = (string)clientConfig.GetValue("auth", "address");
 
-      HOST = (String)clientConfig.GetValue("auth", "host");
-      PORT = Convert.ToInt32(clientConfig.GetValue("auth", "port"));
-      clientID = (String)clientConfig.GetValue("auth", "client_id");
-      clientSecret = (String)clientConfig.GetValue("auth", "client_secret");
-      authServer = (String)clientConfig.GetValue("auth", "auth_api_url");
-      tokenServer = (String)clientConfig.GetValue("auth", "token_api_url");
+      HOST = configAddress != "" ? configAddress : DEFAULT_ADDRESS;
+      PORT = Convert.ToInt32(configPort != "" ? configPort : DEFAULT_PORT);
+      clientID = (string)clientConfig.GetValue("auth", "client_id");
+      clientSecret = (string)clientConfig.GetValue("auth", "client_secret");
+      authServer = (string)clientConfig.GetValue("auth", "auth_api_url");
+      tokenServer = (string)clientConfig.GetValue("auth", "token_api_url");
 
       redirectUri = String.Format("http://{0}:{1}", HOST, PORT);
 
@@ -56,13 +61,12 @@ public class Authorization : Control
   {
     if (redirectServer.IsConnectionAvailable())
     {
-      _serilogger.Information("get Auth Code from callback");
+      _serilogger.Debug("Authorization.cs: get Auth Code from callback");
       StreamPeerTCP connection = redirectServer.TakeConnection();
 
       string request = connection.GetString(connection.GetAvailableBytes());
 
       string authCode = request.Split("&code")[1].Split("=")[1].Split(" ")[0];
-      _serilogger.Information(authCode);
 
       if (request != "" && authCode != null)
       {
@@ -72,7 +76,7 @@ public class Authorization : Control
         connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 OK Content-Type: text/html; charset=utf-8 \r\n\r\n"));
         connection.PutData(response.ToUTF8());
 
-        _serilogger.Information("stop server");
+        _serilogger.Debug("Authorization.cs: stop server");
         connection.DisconnectFromHost();
         redirectServer.Stop();
       }
@@ -81,7 +85,7 @@ public class Authorization : Control
   }
   public async void authorize()
   {
-    _serilogger.Information("Authorizing");
+    _serilogger.Debug("Authorization.cs: Authorizing");
     bool isAuthorized = false;
 
     // Load the access token from a previous login
@@ -102,12 +106,12 @@ public class Authorization : Control
 
     if (isAuthorized)
     {
-      _serilogger.Information("Authorized");
+      _serilogger.Debug("Authorization.cs: Authorized");
       EmitSignal("playerAuthenticated", isAuthorized);
     }
     else
     {
-      _serilogger.Information("No Authorized");
+      _serilogger.Debug("Authorization.cs: No Authorized");
     }
   }
 
@@ -115,7 +119,7 @@ public class Authorization : Control
   {
     if (token == null)
     {
-      _serilogger.Information("token not found");
+      _serilogger.Debug("Authorization.cs: token not found");
       return null;
     }
 
@@ -131,8 +135,8 @@ public class Authorization : Control
 
   private void getAuthCode()
   {
-    _serilogger.Information("call login - ask auth code");
-    redirectServer.Listen((ushort)PORT, "127.0.0.1");
+    _serilogger.Debug("Authorization.cs: call login - ask auth code");
+    redirectServer.Listen((ushort)PORT, HOST);
 
     string[] bodyPart =
     {
@@ -149,7 +153,7 @@ public class Authorization : Control
 
   private async Task<bool> getTokenFromAuthCode(string authCode)
   {
-    _serilogger.Information("get Token from AuthCode");
+    _serilogger.Debug("Authorization.cs: get Token from AuthCode");
     string[] header ={
     "Content-Type:application/x-www-form-urlencoded"
   };
@@ -178,7 +182,7 @@ public class Authorization : Control
     }
     else
     {
-      _serilogger.Information("Error: no token received");
+      _serilogger.Debug("Authorization.cs: Error: no token received");
       EmitSignal("playerAuthenticated", false);
       return false;
     }
@@ -187,11 +191,11 @@ public class Authorization : Control
 
   private async Task<bool> isTokenValid()
   {
-    _serilogger.Information("validate token");
+    _serilogger.Debug("Authorization.cs: validate token");
 
     if (token == null)
     {
-      _serilogger.Information("token not found");
+      _serilogger.Debug("Authorization.cs: token not found");
       return false;
     }
 
@@ -217,17 +221,17 @@ public class Authorization : Control
       }
     }
 
-    _serilogger.Information("token expired");
+    _serilogger.Debug("Authorization.cs: token expired");
     return false;
 
   }
 
   private async Task<bool> refreshTokens()
   {
-    _serilogger.Information("fetch refresh - ask new access token");
+    _serilogger.Debug("Authorization.cs: fetch refresh - ask new access token");
     if (refreshToken == null)
     {
-      _serilogger.Information("refresh token not locally saved");
+      _serilogger.Debug("Authorization.cs: refresh token not locally saved");
       return false;
     }
 
@@ -247,12 +251,12 @@ public class Authorization : Control
     {
       token = bodyParsed["access_token"].ToString();
       saveToken();
-      _serilogger.Information("saved new access token");
+      _serilogger.Debug("Authorization.cs: saved new access token");
 
       return true;
     }
 
-    _serilogger.Information("no new access token");
+    _serilogger.Debug("Authorization.cs: no new access token");
     return false;
   }
 
@@ -277,7 +281,7 @@ public class Authorization : Control
       file.StoreVar(tokens);
       file.Close();
 
-      _serilogger.Information("Token saved successfully");
+      _serilogger.Debug("Authorization.cs: Token saved successfully");
     }
   }
 
@@ -296,7 +300,7 @@ public class Authorization : Control
         refreshToken = tokens["refreshToken"].ToString();
 
         file.Close();
-        _serilogger.Information("get local token");
+        _serilogger.Debug("Authorization.cs: get local token");
       }
     }
   }
@@ -326,7 +330,7 @@ public class Authorization : Control
 
     if (Err != Error.Ok)
     {
-      _serilogger.Information("An error occurred in HTTP request", Err);
+      _serilogger.Debug("Authorization.cs: An error occurred in HTTP request", Err);
       return null;
     }
 

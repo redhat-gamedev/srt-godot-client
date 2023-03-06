@@ -62,6 +62,8 @@ https://www.keycloak.org/server/containers
 
 You can follow this guide https://medium.com/@robert.broeckelmann/openid-connect-authorization-code-flow-with-red-hat-sso-d141dde4ed3f until "Setup Red Hat SSO Client Configuration". This guide works for keycloak too.
 
+Note: The "valid redirect uri" is the location where keycloak sends the access token once the app has been successfully authorized ( Clients -> <your client> -> Valid redirect URIs). For that reason we run a server from this client and by default it listen to 127.0.0.1:31419. In that case, the "valid redirect uri" to set in keycloak is http://127.0.0.1:31419
+
 #### create github auth app
 
 * Go in your github account and click settings
@@ -86,8 +88,8 @@ By default, in debug mode, the authentication is disabled, to activate it you ne
 
 ```csharp
 activate_auth_dev=true;
-port=<port selected for your callback uri>;
-host="<host selected for your callback uti";
+port="<set the TCP server port. Only change this if you need to change it>"; // This prop is also used to compose the valid redirect uri
+address="<set TCP server address. Only change this if you need to change it>"; // This prop is also used to compose the valid redirect uri
 client_id="<set the clientId from your keycloak "clients" section>";
 client_secret="<set the client secret from your keycloak "clients -> credentials" section>"; // You need to enable client authentication flag
 auth_api_url= "<set the url api "/auth" url from keycloak "Realm settings/OpenID Endpoint Configuration">";

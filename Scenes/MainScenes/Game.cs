@@ -901,7 +901,7 @@ public class Game : Node
         return;
       }
 
-      _serilogger.Information($"join failed TODO tell player why");
+      _serilogger.Information("Game.cs: join failed TODO tell player why");
     }
   }
 }

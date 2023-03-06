@@ -2,11 +2,9 @@ using Godot;
 
 public class LoginScreen : Control
 {
-  Game MyGame;
-
   private Authorization authorization;
 
-  Serilog.Core.Logger _serilogger;
+  public Serilog.Core.Logger _serilogger;
 
   [Signal] public delegate void loginSuccess(string userId);
 
@@ -24,7 +22,7 @@ public class LoginScreen : Control
     // if auth fail show Not authenticated screen with a retry button (_on_RetryButton_pressed)
     if (isAuthenticated == false)
     {
-      _serilogger.Information("User no authenticated,retry");
+      _serilogger.Debug("LoginScreen.cs: User no authenticated,retry");
       this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
 
       return;
@@ -37,7 +35,7 @@ public class LoginScreen : Control
 
   private void _on_RetryButton_pressed()
   {
-    _serilogger.Information("Retry authentication");
+    _serilogger.Debug("LoginScreen.cs: Retry authentication");
     authorization.authorize();
   }
 }
