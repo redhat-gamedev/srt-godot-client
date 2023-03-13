@@ -125,12 +125,12 @@ public class Authorization : Control
 
     var payload = this.decodeJWTPayload(token);
 
-    if (!payload.Contains("sub"))
+    if (!payload.Contains("preferred_username"))
     {
       return null;
     }
 
-    return this.decodeJWTPayload(token)["sub"].ToString();
+    return payload["preferred_username"].ToString();
   }
 
   private void getAuthCode()
@@ -251,7 +251,6 @@ public class Authorization : Control
     {
       token = bodyParsed["access_token"].ToString();
       saveToken();
-      _serilogger.Debug("Authorization.cs: saved new access token");
 
       return true;
     }
