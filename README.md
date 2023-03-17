@@ -57,7 +57,13 @@ docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin
 
 This command will start Keycloak exposed on the local port 8080. It will also create an initial admin user with username admin and password admin.
 
-If you want to persist and reuse an existing keycloak configuration , you have to run the following command:
+From the next time, to work with the last configuration you modified, just run:
+
+```bash
+docker start <container ID>
+```
+
+Alternatively, if you want to persist an existing keycloak configuration locally , you have to run the following command:
 
 ``` bash
  docker run -p 8080:8080 -v <you local path>:/opt/keycloak/data/h2 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:20.0.3 start-dev --import-realm
@@ -128,11 +134,11 @@ The *valid redirect uri* is the location where keycloak sends the access token o
 * Go to the *Identity providers* section and click on the Github button.
 ![Create realm](doc/create_github.png)
 
-* Fill *Client ID* and *Client Secret* copying the values from your Github Auth app. In case you lost the *client secret* you can generate a new one from your Github Auth app. Then press *Add*
+* Fill *Client ID* and *Client Secret* copying the values from your Github Auth app. In case you lost the *client secret* you can generate a new one from your Github Auth app. Then press *Add* (*Check for whitespace when copying and pasting these values*)
 
 ![Create realm](doc/configure_github.png)
 
-**Important**: As mentionated in the previous section, uou must copy the *Redirect URI* to your Github *Oauth app*.
+**Important**: As mentionated in the previous section, you must copy the *Redirect URI* to your Github *Oauth app*.
 
 ### Setup str-godot-client
 

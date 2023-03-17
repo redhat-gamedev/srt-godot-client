@@ -14,7 +14,7 @@ port=""; local server port. Only change this if you need to change it
 address=""; local ip address. Only change this if you need to change it
 
 ;Identity and Access management config
-client_id="<keycloak client id>";
+client_id="<keycloak client id>"; Check for whitespace when copying and pasting this value from keycloak
 client_secret="<keycloak secret>";
 auth_api_url= "<keycloak auth api>";
 token_api_url= "<keycloak token api>";
