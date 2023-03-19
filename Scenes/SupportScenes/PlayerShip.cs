@@ -27,6 +27,8 @@ public class PlayerShip : KinematicBody2D
 
   public int MissileDamage = 25;
 
+  public string TravelState = "default";
+
   // the reload time is the minimum time between missile firings
   // relevant when two players are very close to one another and
   // prevents missile spamming
@@ -45,23 +47,29 @@ public class PlayerShip : KinematicBody2D
 
   Node2D shipThing;
 
-  Sprite hitPointRing;
+	Sprite thrustSprite;
+  TextureProgress hitPointRing;
+  AnimationPlayer shipAnimator;
+  Label vectorLbl;
 
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
   /// </summary>
   public override void _Ready()
   {
-    MyGame = GetNode<Game>("/root/Game");
-    _serilogger = MyGame._serilogger;
+	MyGame = GetNode<Game>("/root/Game");
+	_serilogger = MyGame._serilogger;
 
-    shipThing = (Node2D)GetParent();
-    Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
+	shipThing = (Node2D)GetParent();
+	Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
-    hitPointRing = (Sprite)GetNode("HitPointShader");
-
-    // TODO: deal with really long UUIDs
-    playerIDLabel.Text = uuid;
+	hitPointRing = (TextureProgress)GetNode("HitPoints");
+	shipAnimator = (AnimationPlayer)GetNode("ShipSpritePlayer");
+	vectorLbl = (Label)GetParent().GetNode("Stat").GetNode("VectorLbl");
+	thrustSprite = (Sprite)GetNode("ThrustSprite");
+	
+	// TODO: deal with really long UUIDs
+	playerIDLabel.Text = uuid;
   }
 
   /// <summary>
@@ -71,18 +79,18 @@ public class PlayerShip : KinematicBody2D
   /// <returns></returns>
   public GameEvent CreatePlayerGameEventBuffer(GameEvent.GameEventType BufferType)
   {
-    GameEvent egeb = new GameEvent();
-    egeb.game_event_type = BufferType;
-    egeb.game_object_type = GameEvent.GameObjectType.GameObjectTypePlayer;
-    egeb.Uuid = uuid;
+	GameEvent egeb = new GameEvent();
+	egeb.game_event_type = BufferType;
+	egeb.game_object_type = GameEvent.GameObjectType.GameObjectTypePlayer;
+	egeb.Uuid = uuid;
 
-    egeb.PositionX = (int)GlobalPosition.x;
-    egeb.PositionY = (int)GlobalPosition.y;
+	egeb.PositionX = (int)GlobalPosition.x;
+	egeb.PositionY = (int)GlobalPosition.y;
 
-    egeb.Angle = RotationDegrees;
-    egeb.AbsoluteVelocity = CurrentVelocity;
+	egeb.Angle = RotationDegrees;
+	egeb.AbsoluteVelocity = CurrentVelocity;
 
-    return egeb;
+	return egeb;
   }
 
   /// <summary>
@@ -91,13 +99,79 @@ public class PlayerShip : KinematicBody2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(GameEvent egeb)
   {
-    _serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
-    GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    RotationDegrees = egeb.Angle;
-    CurrentVelocity = egeb.AbsoluteVelocity;
-    HitPoints = egeb.HitPoints;
+	_serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
+	GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
+	UpdateShipAnimation(egeb.Angle, egeb.AbsoluteVelocity);
+	RotationDegrees = egeb.Angle;
+	CurrentVelocity = egeb.AbsoluteVelocity;
+	HitPoints = egeb.HitPoints;
   }
 
+  void UpdateShipAnimation(float rot, float vel) {
+		/*
+		Rotation -180 to 0 to 180
+		*/
+		bool leftturn = false;
+		bool rightturn = false;
+		bool turning = (RotationDegrees != rot);
+		
+		bool cruise = !turning && (CurrentVelocity == vel || CurrentVelocity == MaxSpeed);
+		bool thrust = (CurrentVelocity < vel);
+		bool brake = (CurrentVelocity > vel && vel == 0);
+		if(!shipAnimator.IsPlaying()) {
+			if (thrust || CurrentVelocity == MaxSpeed) {
+				thrustSprite.Visible = true;
+			} else {
+				thrustSprite.Visible = false;
+			}
+			if (!turning) {
+				if (shipAnimator.AssignedAnimation == "left" || shipAnimator.AssignedAnimation == "right"){
+					//shipAnimator.PlayBackwards(shipAnimator.AssignedAnimation);
+				}				
+				if (thrust && shipAnimator.AssignedAnimation != "thrust") {
+					shipAnimator.Play("thrust");
+					vectorLbl.Text = "thrust";
+				} else if (brake && shipAnimator.AssignedAnimation != "brake") {
+					shipAnimator.Play("brake");
+					vectorLbl.Text = "thrust";
+				} else if (shipAnimator.AssignedAnimation != "cruise") {
+					shipAnimator.Play("cruise");
+					vectorLbl.Text = "cruise";
+				}
+			} else {
+				float trueRotation = GetTrueRotation(RotationDegrees);
+				float trueNewRotation = GetTrueRotation(rot);
+				if (trueRotation > 270 && trueNewRotation < 90) {
+					leftturn = true;
+					rightturn = false;
+				} else if (trueRotation < 90 && trueNewRotation > 270) {
+					leftturn = false;
+					rightturn = true;
+				} else {
+					leftturn = trueRotation < trueNewRotation;
+					rightturn = trueRotation > trueNewRotation;
+				}
+
+				if (leftturn && shipAnimator.AssignedAnimation != "left") {
+					shipAnimator.Play("left");
+					//vectorLbl.Text = RotationDegrees.ToString();
+				} else if (rightturn && shipAnimator.AssignedAnimation != "right") {
+					shipAnimator.Play("right");
+					//vectorLbl.Text = RotationDegrees.ToString();
+				}
+			}
+		}
+	}
+
+	public float GetTrueRotation(float degrees) {
+		float val = 0;
+		if (degrees < 0) {
+			val = Math.Abs(degrees);
+		} else if (degrees > 0) {
+			val = 360 - degrees;
+		}
+		return val;
+	}
   /// <summary>
   /// 
   /// </summary>
@@ -112,42 +186,42 @@ public class PlayerShip : KinematicBody2D
   // TODO: this is unused -- should we relocate fire methods from Game.cs?
   public void FireMissile()
   {
-    // only one missile allowed for now
-    if (MyMissile != null) { return; }
+	// only one missile allowed for now
+	if (MyMissile != null) { return; }
 
-    PackedScene missileScene = (PackedScene)ResourceLoader.Load("res://SpaceMissile.tscn");
-    MyMissile = (SpaceMissile)missileScene.Instance();
+	PackedScene missileScene = (PackedScene)ResourceLoader.Load("res://SpaceMissile.tscn");
+	MyMissile = (SpaceMissile)missileScene.Instance();
 
-    MyMissile.uuid = Guid.NewGuid().ToString();
+	MyMissile.uuid = Guid.NewGuid().ToString();
 
-    // missile should point in the same direction as the ship
-    MyMissile.Rotation = Rotation;
+	// missile should point in the same direction as the ship
+	MyMissile.Rotation = Rotation;
 
-    // TODO: need to offset this to the front of the ship
-    // start at our position
-    MyMissile.Position = GlobalPosition;
+	// TODO: need to offset this to the front of the ship
+	// start at our position
+	MyMissile.Position = GlobalPosition;
 
-    // negative direction is "up"
-    Vector2 offset = new Vector2(0, -100);
+	// negative direction is "up"
+	Vector2 offset = new Vector2(0, -100);
 
-    // rotate the offset to match the current ship heading
-    offset = offset.Rotated(Rotation);
-    MyMissile.Position = MyMissile.Position + offset;
+	// rotate the offset to match the current ship heading
+	offset = offset.Rotated(Rotation);
+	MyMissile.Position = MyMissile.Position + offset;
 
-    // set missile's parameters based on current modifiers
-    MyMissile.MissileSpeed = MissileSpeed;
-    MyMissile.MissileLife = MissileLife;
-    MyMissile.MissileDamage = MissileDamage;
+	// set missile's parameters based on current modifiers
+	MyMissile.MissileSpeed = MissileSpeed;
+	MyMissile.MissileLife = MissileLife;
+	MyMissile.MissileDamage = MissileDamage;
 
-    // this is a poop way to do this
-    MyMissile.MyPlayer = this;
+	// this is a poop way to do this
+	MyMissile.MyPlayer = this;
 
-    // put the missile into the missiles group so we can send updates about it later
-    MyMissile.AddToGroup("missiles");
+	// put the missile into the missiles group so we can send updates about it later
+	MyMissile.AddToGroup("missiles");
 
-    Node rootNode = GetNode<Node>("/root/");
-    rootNode.CallDeferred("add_child", MyMissile);
-    _serilogger.Debug("Added missile instance!");
+	Node rootNode = GetNode<Node>("/root/");
+	rootNode.CallDeferred("add_child", MyMissile);
+	_serilogger.Debug("Added missile instance!");
   }
 
   /// <summary>
@@ -156,9 +230,9 @@ public class PlayerShip : KinematicBody2D
   /// <param name="Damage"></param>
   public void TakeDamage(int Damage)
   {
-    _serilogger.Debug($"Player.cs: {uuid}: Taking damage: {Damage}");
-    HitPoints -= Damage;
-    _serilogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
+	_serilogger.Debug($"Player.cs: {uuid}: Taking damage: {Damage}");
+	HitPoints -= Damage;
+	_serilogger.Debug($"Player.cs: {uuid}: Hitpoints: {HitPoints}");
   }
 
   void CheckMissileReload(float delta)
@@ -176,19 +250,23 @@ public class PlayerShip : KinematicBody2D
 
   void UpdateHitPointRing()
   {
-    float hitPointRatio = (float)HitPoints / (float)MyGame.PlayerDefaultHitPoints;
-    _serilogger.Verbose($"PlayerShip.cs: hitpoints is {HitPoints} for UUID {uuid}");
-    _serilogger.Verbose($"PlayerShip.cs: hitpoint ratio {hitPointRatio} for UUID {uuid}");
-
-    ShaderMaterial ringShader = (ShaderMaterial)hitPointRing.Material;
-    ringShader.SetShaderParam("fill_ratio", hitPointRatio);
-    _serilogger.Verbose($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
+	hitPointRing.MaxValue = (float)MyGame.PlayerDefaultHitPoints;
+	hitPointRing.Value = (float)HitPoints;
+	_serilogger.Verbose($"PlayerShip.cs: hitpoints is {HitPoints} for UUID {uuid}");
+	_serilogger.Debug($"PlayerShip.cs: hitpoint ratio {hitPointRing.Value}/{hitPointRing.MaxValue} for UUID {uuid}");
+	/*
+	float hitPointRatio = (float)HitPoints / (float)MyGame.PlayerDefaultHitPoints;
+	ShaderMaterial ringShader = (ShaderMaterial)hitPointRing.Material;
+	ringShader.SetShaderParam("fill_ratio", hitPointRatio);
+	_serilogger.Debug($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
+	*/
+	
   }
 
   public override void _Process(float delta)
   {
-    CheckMissileReload(delta);
-    UpdateHitPointRing();
+	CheckMissileReload(delta);
+	UpdateHitPointRing();
   }
 
   void _on_ExplodeSound_finished()
