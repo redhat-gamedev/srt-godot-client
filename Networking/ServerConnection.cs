@@ -32,6 +32,8 @@ public class ServerConnection : Node
   ReceiverLink securityOutReceiver;
   public static readonly string UUID = System.Guid.NewGuid().ToString();
 
+  [Signal] public delegate void isServerConnected(bool connected);
+
   public override void _Ready()
   {
     MyGame = GetNode<Game>("/root/Game");
@@ -39,7 +41,7 @@ public class ServerConnection : Node
 
     // TODO: move config to its own method
     var clientConfig = new ConfigFile();
-    Godot.Error err; 
+    Godot.Error err;
 
     _serilogger.Debug("ServerConnection.cs: Attempting to load embedded client config");
     err = clientConfig.Load("res://Resources/client.cfg");
@@ -107,7 +109,7 @@ public class ServerConnection : Node
     }
     catch (System.Exception)
     {
-      
+
       throw;
     }
   }
@@ -145,7 +147,7 @@ public class ServerConnection : Node
       Message msg = new Message(msgBytes);
       securitySender.Send(msg, null, null); // don't care about the ack on our message being received
 
-      
+
     }
     catch (Exception ex)
     {
@@ -180,7 +182,8 @@ public class ServerConnection : Node
     {
       _serilogger.Error("ServerConnection.cs: AMQP connection/session failed for " + url);
       _serilogger.Error($"ServerConnection.cs: {ex.Message}");
-      // TODO: let player know
+
+      EmitSignal("isServerConnected", false);
       return;
     }
 
@@ -231,6 +234,8 @@ public class ServerConnection : Node
     announceMessage.Uuid = UUID;
     announceMessage.security_type = Security.SecurityType.SecurityTypeAnnounce;
     SendSecurity(announceMessage);
+
+    EmitSignal("isServerConnected", true);
   }
 
   private void ProcessSecurity(Security security)
@@ -243,7 +248,8 @@ public class ServerConnection : Node
           _serilogger.Debug($"ServerConnection.cs: Received announce for {security.Uuid}");
 
           // check if the received announce matches our ServerConnection UUID
-          if (security.Uuid == UUID) {
+          if (security.Uuid == UUID)
+          {
             _serilogger.Debug("ServerConnection.cs: Received announce message matches our UUID, processing");
             MyGame.ProcessAnnounce(security);
           }
@@ -274,7 +280,7 @@ public class ServerConnection : Node
   /// Delete event should remove nodes
   ///
   /// TODO: move this into it's own class to declutter the ServerCode
-  /// 
+  ///
   /// </summary>
   /// <param name="egeb"></param>
   private void ProcessGameEvent(GameEvent egeb)
@@ -361,6 +367,6 @@ public class ServerConnection : Node
   //  // Called every frame. 'delta' is the elapsed time since the previous frame.
   //  public override void _Process(float delta)
   //  {
-  //      
+  //
   //  }
 }

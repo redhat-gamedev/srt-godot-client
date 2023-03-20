@@ -9,3 +9,6 @@ data_*/
 mono_crash*
 
 .vs/
+.vscode
+
+Resources/client.cfg

@@ -1,0 +1,21 @@
+[amqp]
+;server_string="amqp://amqp1.srtgame.com"
+;server_string="amqp://ec2-54-172-36-84.compute-1.amazonaws.com:5672"
+;amqp://localhost:5672"
+server_string="<amqp url>"
+disable_cert_validation=true
+
+[game]
+log_level=4 ; 0=fatal, 1=err, 2=warn, 3=inf, 4=dbg, 5=verbose
+
+[auth]
+activate_auth_dev=false; enable/disable auth in dev mode
+port=""; local server port. Only change this if you need to change it
+address=""; local ip address. Only change this if you need to change it
+
+;Identity and Access management config
+client_id="<keycloak client id>"; Check for whitespace when copying and pasting this value from keycloak
+client_secret="<keycloak secret>";
+auth_api_url= "<keycloak auth api>";
+token_api_url= "<keycloak token api>";
+

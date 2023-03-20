@@ -18,6 +18,7 @@ public class Game : Node
   private Stopwatch GameStopwatch = new Stopwatch();
 
   Boolean inGame = false;
+  Boolean activateAuthDev = false;
 
   // UI elements
   CanvasLayer gameUI;
@@ -90,6 +91,9 @@ public class Game : Node
       err = clientConfig.Load("Resources/client.cfg");
     }
 
+    // enable/disable authentication in dev mode
+    activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
+
     int DesiredLogLevel = 3;
 
     // if the file was loaded successfully, read the vars
@@ -143,12 +147,8 @@ public class Game : Node
   {
     GameStopwatch.Start();
     levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
-
     _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
-
-    serverConnection = new ServerConnection();
-    this.AddChild(serverConnection);
 
     LoadConfig();
 
@@ -164,14 +164,20 @@ public class Game : Node
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
 
-    PackedScene packedLoginScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
-    loginScreen = (LoginScreen)packedLoginScene.Instance();
-    loginScreen.Hide();
-    this.AddChild(loginScreen);
-    loginScreen.Show();
+    // skip the authentication flow in Debug mode and if we don't want to test it
+    if (OS.IsDebugBuild() && activateAuthDev == false)
+    {
+      this._on_login_success("test-userId");
+      return;
+    }
 
-    // TODO: check for server connection and do some retries if something is wrong
-    // if lots of fails, pop up an error screen (and let player do server config?)
+    PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
+
+    loginScreen = (LoginScreen)packedAuthScene.Instance();
+    this.AddChild(loginScreen);
+
+    // wait a notification the login flow
+    loginScreen.Connect("loginSuccess", this, "_on_login_success");
   }
 
   public void displayGameOverScreen()
@@ -236,7 +242,7 @@ public class Game : Node
 
   void updateGameRadar()
   {
-    // the radar circle is approximately 280x280 and its center is 
+    // the radar circle is approximately 280x280 and its center is
     // approximately 169,215 on the image
 
     // delete all the radar blips
@@ -316,7 +322,7 @@ public class Game : Node
   void ProcessPlayerDestroy()
   {
     GameEvent ge = null;
-    while(PlayerDestroyQueue.TryDequeue(out ge))
+    while (PlayerDestroyQueue.TryDequeue(out ge))
     {
       if (null == ge)
       {
@@ -444,7 +450,7 @@ public class Game : Node
     // instead of doing this, no?
     if (inGame)
     {
-      if (Input.IsActionPressed("rotate_right")) 
+      if (Input.IsActionPressed("rotate_right"))
       {
         velocity.x += 1;
         turnRightControlLit = true;
@@ -454,7 +460,7 @@ public class Game : Node
         turnRightControlLit = false;
       }
 
-      if (Input.IsActionPressed("rotate_left")) 
+      if (Input.IsActionPressed("rotate_left"))
       {
         velocity.x -= 1;
         turnLeftControlLit = true;
@@ -464,7 +470,7 @@ public class Game : Node
         turnLeftControlLit = false;
       }
 
-      if (Input.IsActionPressed("thrust_forward")) 
+      if (Input.IsActionPressed("thrust_forward"))
       {
         velocity.y += 1;
         fasterControlLit = true;
@@ -474,7 +480,7 @@ public class Game : Node
         fasterControlLit = false;
       }
 
-      if (Input.IsActionPressed("thrust_reverse")) 
+      if (Input.IsActionPressed("thrust_reverse"))
       {
         velocity.y -= 1;
         slowerControlLit = true;
@@ -484,7 +490,7 @@ public class Game : Node
         slowerControlLit = false;
       }
 
-      if (Input.IsActionPressed("fire")) 
+      if (Input.IsActionPressed("fire"))
       {
         shoot.y = 1;
         fireControlLit = true;
@@ -504,7 +510,7 @@ public class Game : Node
       }
 
       // https://gdscript.com/solutions/godot-timing-tutorial/
-      // check if we should update the debug UI, which itself should only be done if 
+      // check if we should update the debug UI, which itself should only be done if
       // we are in a graphical mode
       // TODO: only if in graphical debug mode
       // TODO: should also probably use timer node
@@ -520,16 +526,16 @@ public class Game : Node
     ProcessPlayerDestroy();
   }
 
-  public bool JoinGameAsPlayer(string playerName)
+  public bool JoinGameAsPlayer(string myUuid)
   {
     // TODO: if not connected, try again to connect to server
-    _serilogger.Debug($"Game.cs: Sending join with UUID: {myUuid}, named: {playerName}");
+    _serilogger.Information($"Game.cs: Sending join with UUID: {myUuid}");
 
     // construct a join message
     Security scb = new Security();
 
     //scb.Uuid = ServerConnection.UUID;
-    scb.Uuid = playerName;
+    scb.Uuid = myUuid;
 
     scb.security_type = Security.SecurityType.SecurityTypeJoin;
     serverConnection.SendSecurity(scb);
@@ -563,8 +569,8 @@ public class Game : Node
 
     // TODO: we might need to do something in the case where we end up creating ships before the announce message
     //       has been processed. Right now the code will create a ship as soon as it receives an update for a ship
-    //       it doesn't know about, but that could happen before we've received the announce. It's nice to 
-    //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on 
+    //       it doesn't know about, but that could happen before we've received the announce. It's nice to
+    //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on
     //       joining
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
@@ -592,7 +598,7 @@ public class Game : Node
     else return shipInstance;
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
-    // where the server is using the ShipThing, this is using the PlayerShip. It may 
+    // where the server is using the ShipThing, this is using the PlayerShip. It may
     // or may not be significant down the line
     playerObjects.Add(uuid, shipInstance);
 
@@ -634,11 +640,11 @@ public class Game : Node
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
         shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
       }
-			else
-			{
+      else
+      {
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, warp out");
         shipInstance.GetNode<AudioStreamPlayer2D>("WarpOutSound").Play();
-			}
+      }
 
       _serilogger.Debug($"Game.cs: Expiring player {uuid}");
 
@@ -872,4 +878,30 @@ public class Game : Node
     }
   }
 
+  void _on_login_success(string userId)
+  {
+    // user is authenticated. Now we try to connect to the server
+    serverConnection = new ServerConnection();
+    this.AddChild(serverConnection);
+    this.myUuid = userId;
+
+    serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
+  }
+
+  void _on_is_server_connected(bool isServerConnected)
+  {
+    // At this point the user is authenticated and the server is connected. Now we can go to the game
+    if (isServerConnected && this.myUuid != null)
+    {
+      bool success = this.JoinGameAsPlayer(this.myUuid);
+
+      if (success)
+      {
+        this.initializeGameUI();
+        return;
+      }
+
+      _serilogger.Information("Game.cs: join failed TODO tell player why");
+    }
+  }
 }

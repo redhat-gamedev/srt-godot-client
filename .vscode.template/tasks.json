@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "build",
-      "command": "/opt/Godot/Godot_v3.5.1-stable_mono_x11_64/Godot_v3.5.1-stable_mono_x11.64",
+      "command": "<add your Godot path>",
       "type": "process",
       "args": [
         "--build-solutions",
