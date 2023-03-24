@@ -3,12 +3,12 @@ using Godot;
 public class LoginScreen : Control
 {
   private Authorization authorization;
-
+  private LineEdit textField;
   public Serilog.Core.Logger _serilogger;
 
   [Signal] public delegate void loginSuccess(string userId);
 
-  public override void _Ready()
+  public void createLogin()
   {
     authorization = authorization = new Authorization();
     this.AddChild(authorization);
@@ -37,5 +37,21 @@ public class LoginScreen : Control
   {
     _serilogger.Debug("LoginScreen.cs: Retry authentication");
     authorization.authorize();
+  }
+
+  //called when dev mode = debug and activate_auth_dev=false
+  public void createFakeLogin()
+  {
+    this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+    this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+
+    textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
+    textField.GrabFocus();
+  }
+
+  private void _on_JoinButton_button_up()
+  {
+    QueueFree();
+    EmitSignal("loginSuccess", textField.Text);
   }
 }
