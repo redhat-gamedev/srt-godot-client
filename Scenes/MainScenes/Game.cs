@@ -18,8 +18,6 @@ public class Game : Node
   private Stopwatch GameStopwatch = new Stopwatch();
 
   Boolean inGame = false;
-  Boolean activateAuthDev = false;
-
   // UI elements
   CanvasLayer gameUI;
   TextureRect speedometer;
@@ -90,9 +88,6 @@ public class Game : Node
       _serilogger.Information("Game.cs: Local user config not found, defaulting to built-in");
       err = clientConfig.Load("Resources/client.cfg");
     }
-
-    // enable/disable authentication in dev mode
-    activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
 
     int DesiredLogLevel = 3;
 
@@ -167,17 +162,6 @@ public class Game : Node
 
     loginScreen = (LoginScreen)packedAuthScene.Instance();
     this.AddChild(loginScreen);
-
-    // skip the authentication flow in Debug mode and if we don't want to test it
-    if (OS.IsDebugBuild() && activateAuthDev == false)
-    {
-      loginScreen.createFakeLogin();
-    }
-    else
-    {
-      loginScreen.createLogin();
-    }
-
     // wait a notification the login flow
     loginScreen.Connect("loginSuccess", this, "_on_login_success");
   }

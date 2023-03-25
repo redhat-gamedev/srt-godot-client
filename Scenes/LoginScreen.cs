@@ -1,20 +1,44 @@
 using Godot;
+using System;
 
 public class LoginScreen : Control
 {
   private Authorization authorization;
   private LineEdit textField;
+  Boolean activateAuthDev = false;
   public Serilog.Core.Logger _serilogger;
 
   [Signal] public delegate void loginSuccess(string userId);
 
-  public void createLogin()
+  public override void _Ready()
   {
-    authorization = authorization = new Authorization();
-    this.AddChild(authorization);
+    var clientConfig = new ConfigFile();
+    Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
 
-    // listening for the Auth results: fail or success
-    authorization.Connect("playerAuthenticated", this, "_on_is_player_authenticated");
+    if (err == Godot.Error.Ok)
+    {
+      // enable/disable authentication in dev mode
+      activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
+
+      // skip the authentication flow in Debug mode and if we don't want to test it
+      if (OS.IsDebugBuild() && activateAuthDev == false)
+      {
+        this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+        this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+
+        textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
+        textField.GrabFocus();
+      }
+      else
+      {
+        authorization = authorization = new Authorization();
+        this.AddChild(authorization);
+
+        // listening for the Auth results: fail or success
+        authorization.Connect("playerAuthenticated", this, "_on_is_player_authenticated");
+      }
+
+    }
   }
 
   void _on_is_player_authenticated(bool isAuthenticated)
@@ -37,16 +61,6 @@ public class LoginScreen : Control
   {
     _serilogger.Debug("LoginScreen.cs: Retry authentication");
     authorization.authorize();
-  }
-
-  //called when dev mode = debug and activate_auth_dev=false
-  public void createFakeLogin()
-  {
-    this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
-    this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
-
-    textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
-    textField.GrabFocus();
   }
 
   private void _on_JoinButton_button_up()
