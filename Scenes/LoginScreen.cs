@@ -15,29 +15,32 @@ public class LoginScreen : Control
     var clientConfig = new ConfigFile();
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
 
-    if (err == Godot.Error.Ok)
+    // If config file failed to load and the game is in debug mode throw an error
+    if (err != Godot.Error.Ok && OS.IsDebugBuild())
     {
-      // enable/disable authentication in dev mode
-      activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
+      throw new Exception("LoginScreen.cs: Failed to load the client configuration file");
+    }
 
-      // skip the authentication flow in Debug mode and if we don't want to test it
-      if (OS.IsDebugBuild() && activateAuthDev == false)
-      {
-        this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
-        this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
+    // enable/disable authentication in dev mode
+    var activateAuthDevVar = OS.GetEnvironment("ACTIVATE_AUTH_DEV") ?? clientConfig.GetValue("auth", "activate_auth_dev");
+    activateAuthDev = (Boolean)activateAuthDevVar;
 
-        textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
-        textField.GrabFocus();
-      }
-      else
-      {
-        authorization = authorization = new Authorization();
-        this.AddChild(authorization);
+    // skip the authentication flow in Debug mode and if we don't want to test it
+    if (OS.IsDebugBuild() && activateAuthDev == false)
+    {
+      this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
+      this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
 
-        // listening for the Auth results: fail or success
-        authorization.Connect("playerAuthenticated", this, "_on_is_player_authenticated");
-      }
+      textField = this.GetNode<LineEdit>("VBoxContainer/HBoxContainer/NameLineEdit");
+      textField.GrabFocus();
+    }
+    else
+    {
+      authorization = authorization = new Authorization();
+      this.AddChild(authorization);
 
+      // listening for the Auth results: fail or success
+      authorization.Connect("playerAuthenticated", this, "_on_is_player_authenticated");
     }
   }
 

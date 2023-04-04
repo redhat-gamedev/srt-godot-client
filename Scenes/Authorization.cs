@@ -37,22 +37,23 @@ public class Authorization : Control
     var clientConfig = new ConfigFile();
 
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
-    if (err == Godot.Error.Ok)
+    // If config file failed to load and the game is in debug mode throw an error
+    if (err != Godot.Error.Ok && OS.IsDebugBuild())
     {
-      var configPort = (string)clientConfig.GetValue("auth", "port");
-      string configAddress = (string)clientConfig.GetValue("auth", "address");
-
-      HOST = configAddress != "" ? configAddress : DEFAULT_ADDRESS;
-      PORT = Convert.ToInt32(configPort != "" ? configPort : DEFAULT_PORT);
-      clientID = (string)clientConfig.GetValue("auth", "client_id");
-      clientSecret = (string)clientConfig.GetValue("auth", "client_secret");
-      authServer = (string)clientConfig.GetValue("auth", "auth_api_url");
-      tokenServer = (string)clientConfig.GetValue("auth", "token_api_url");
-
-      redirectUri = String.Format("http://{0}:{1}", HOST, PORT);
-
-      authorize();
+      throw new Exception("Authorization.cs: Failed to load the client configuration file");
     }
+
+    var configPort = OS.GetEnvironment("PORT") ?? (string)clientConfig.GetValue("auth", "port");
+    string configAddress = OS.GetEnvironment("ADDRESS") ?? (string)clientConfig.GetValue("auth", "address");
+
+    clientID = OS.GetEnvironment("CLIENT_ID") ?? (string)clientConfig.GetValue("auth", "client_id");
+    clientSecret = OS.GetEnvironment("CLIENT_SECRET") ?? (string)clientConfig.GetValue("auth", "client_secret");
+    authServer = OS.GetEnvironment("AUTH_API_URL") ?? (string)clientConfig.GetValue("auth", "auth_api_url");
+    tokenServer = OS.GetEnvironment("TOKEN_API_URL") ?? (string)clientConfig.GetValue("auth", "token_api_url");
+
+    redirectUri = String.Format("http://{0}:{1}", HOST, PORT);
+
+    authorize();
   }
 
   // Wait for a Oauth callback from the Identity manager to receive an auth code, then ask for a token
