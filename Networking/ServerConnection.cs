@@ -45,25 +45,24 @@ public class ServerConnection : Node
 
     _serilogger.Debug("ServerConnection.cs: Attempting to load embedded client config");
     err = clientConfig.Load("res://Resources/client.cfg");
-    if (err == Godot.Error.Ok)
+    if (err != Godot.Error.Ok)
     {
-      _serilogger.Information("ServerConnection.cs: Successfully loaded the config from 'res://Resources/client.cfg'");
-      url = (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
-      _serilogger.Debug("ServerConnection.cs: config file: setting url to " + url);
-      disableCertValidation = (bool)clientConfig.GetValue("amqp", "disable_cert_validation", true);
-      _serilogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
+      err = clientConfig.Load("user://client.cfg");
+      _serilogger.Information("ServerConnection.cs: Successfully loaded the config from 'user://client.cfg'");
+
+      // If config file failed to load and the game is in debug mode throw an error
+      if (err != Godot.Error.Ok && OS.IsDebugBuild())
+      {
+        throw new Exception("ServerConnection.cs: Failed to load the client configuration file");
+      }
     }
 
-    _serilogger.Debug("ServerConnection.cs: Overriding with client local/user config");
-    err = clientConfig.Load("user://client.cfg");
-    if (err == Godot.Error.Ok)
-    {
-      _serilogger.Information("ServerConnection.cs: Successfully loaded the config from 'user://client.cfg'");
-      url = (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
-      _serilogger.Debug("ServerConnection.cs: config file: setting url to " + url);
-      disableCertValidation = (bool)clientConfig.GetValue("amqp", "disable_cert_validation", true);
-      _serilogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
-    }
+    url = OS.GetEnvironment("SERVER_STRING") ?? (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
+    _serilogger.Debug("ServerConnection.cs: config file: setting url to " + url);
+    var disableCertValidationValue = OS.GetEnvironment("DISABLE_CERT_VALIDAION") ?? clientConfig.GetValue("amqp", "disable_cert_validation", true);
+    disableCertValidationValue = (bool)disableCertValidationValue;
+
+    _serilogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
 
     InitializeAMQP();
 

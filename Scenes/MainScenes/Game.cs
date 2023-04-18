@@ -18,8 +18,6 @@ public class Game : Node
   private Stopwatch GameStopwatch = new Stopwatch();
 
   Boolean inGame = false;
-  Boolean activateAuthDev = false;
-
   // UI elements
   CanvasLayer gameUI;
   TextureRect speedometer;
@@ -91,9 +89,6 @@ public class Game : Node
       err = clientConfig.Load("Resources/client.cfg");
     }
 
-    // enable/disable authentication in dev mode
-    activateAuthDev = (Boolean)clientConfig.GetValue("auth", "activate_auth_dev");
-
     int DesiredLogLevel = 3;
 
     // if the file was loaded successfully, read the vars
@@ -163,19 +158,10 @@ public class Game : Node
     turnLeftControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnLeft");
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
-
-    // skip the authentication flow in Debug mode and if we don't want to test it
-    if (OS.IsDebugBuild() && activateAuthDev == false)
-    {
-      this._on_login_success("test-userId");
-      return;
-    }
-
     PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
 
     loginScreen = (LoginScreen)packedAuthScene.Instance();
     this.AddChild(loginScreen);
-
     // wait a notification the login flow
     loginScreen.Connect("loginSuccess", this, "_on_login_success");
   }
