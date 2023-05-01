@@ -57,11 +57,11 @@ public class ServerConnection : Node
       }
     }
 
-    url = OS.GetEnvironment("SERVER_STRING") ?? (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
+    url = System.Environment.GetEnvironmentVariable("SERVER_STRING") ?? (String)clientConfig.GetValue("amqp", "server_string", "amqp://127.0.0.1:5672");
     _serilogger.Debug("ServerConnection.cs: config file: setting url to " + url);
-    var disableCertValidationValue = OS.GetEnvironment("DISABLE_CERT_VALIDAION") ?? clientConfig.GetValue("amqp", "disable_cert_validation", true);
-    disableCertValidationValue = (bool)disableCertValidationValue;
 
+    var disableCertValidationValue = System.Environment.GetEnvironmentVariable("DISABLE_CERT_VALIDAION") ?? clientConfig.GetValue("amqp", "disable_cert_validation", true);
+    disableCertValidationValue = (bool)disableCertValidationValue;
     _serilogger.Debug("ServerConnection.cs: config file: setting cert validation to " + disableCertValidation);
 
     InitializeAMQP();

@@ -10,8 +10,8 @@ log_level=4 ; 0=fatal, 1=err, 2=warn, 3=inf, 4=dbg, 5=verbose
 
 [auth]
 activate_auth_dev=false; enable/disable auth in dev mode
-port=""; local server port. Only change this if you need to change it
-address=""; local ip address. Only change this if you need to change it
+port="31419"; local server port. Only change this if you need to change it
+address="127.0.0.1"; local ip address. Only change this if you need to change it
 
 ;Identity and Access management config
 client_id="<keycloak client id>"; Check for whitespace when copying and pasting this value from keycloak

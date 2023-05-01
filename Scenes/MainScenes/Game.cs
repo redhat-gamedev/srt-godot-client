@@ -158,10 +158,12 @@ public class Game : Node
     turnLeftControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnLeft");
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
-    PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
 
+
+    PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
     loginScreen = (LoginScreen)packedAuthScene.Instance();
-    this.AddChild(loginScreen);
+    AddChild(loginScreen);
+
     // wait a notification the login flow
     loginScreen.Connect("loginSuccess", this, "_on_login_success");
   }
