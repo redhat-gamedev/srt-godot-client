@@ -10,8 +10,8 @@ public class Authorization : Control
 
   public Serilog.Core.Logger _serilogger;
 
-  int PORT;
-  string HOST;
+  string port;
+  string host;
   string clientID;
   string clientSecret;
   string authServer;
@@ -22,8 +22,6 @@ public class Authorization : Control
   const string SAVE_DIR = "user://auth/";
   const string save_path = SAVE_DIR + "token.dat";
   const string HTML_REDIRECTION_PAGE = "res://Assets/Artwork/Home.html";
-  const string DEFAULT_ADDRESS = "127.0.0.1";
-  const string DEFAULT_PORT = "31419";
 
   TCP_Server redirectServer = new TCP_Server();
   [Signal] public delegate void playerAuthenticated(bool isAuthorized);
@@ -43,15 +41,16 @@ public class Authorization : Control
       throw new Exception("Authorization.cs: Failed to load the client configuration file");
     }
 
-    var configPort = OS.GetEnvironment("PORT") ?? (string)clientConfig.GetValue("auth", "port");
-    string configAddress = OS.GetEnvironment("ADDRESS") ?? (string)clientConfig.GetValue("auth", "address");
+    port = System.Environment.GetEnvironmentVariable("PORT") ?? (string)clientConfig.GetValue("auth", "port", "31419");
+    host = System.Environment.GetEnvironmentVariable("ADDRESS") ?? (string)clientConfig.GetValue("auth", "address", "127.0.0.1");
 
-    clientID = OS.GetEnvironment("CLIENT_ID") ?? (string)clientConfig.GetValue("auth", "client_id");
-    clientSecret = OS.GetEnvironment("CLIENT_SECRET") ?? (string)clientConfig.GetValue("auth", "client_secret");
-    authServer = OS.GetEnvironment("AUTH_API_URL") ?? (string)clientConfig.GetValue("auth", "auth_api_url");
-    tokenServer = OS.GetEnvironment("TOKEN_API_URL") ?? (string)clientConfig.GetValue("auth", "token_api_url");
+    // TODO: handle when the settings are impossible to reconcile, like using auth without valid urls or whatever
+    clientID = System.Environment.GetEnvironmentVariable("CLIENT_ID") ?? (string)clientConfig.GetValue("auth", "client_id", "nodefault");
+    clientSecret = System.Environment.GetEnvironmentVariable("CLIENT_SECRET") ?? (string)clientConfig.GetValue("auth", "client_secret", "nodefault");
+    authServer = System.Environment.GetEnvironmentVariable("AUTH_API_URL") ?? (string)clientConfig.GetValue("auth", "auth_api_url", "nodefault");
+    tokenServer = System.Environment.GetEnvironmentVariable("TOKEN_API_URL") ?? (string)clientConfig.GetValue("auth", "token_api_url", "nodefault");
 
-    redirectUri = String.Format("http://{0}:{1}", HOST, PORT);
+    redirectUri = String.Format("http://{0}:{1}", host, port);
 
     authorize();
   }
@@ -137,7 +136,7 @@ public class Authorization : Control
   private void getAuthCode()
   {
     _serilogger.Debug("Authorization.cs: call login - ask auth code");
-    redirectServer.Listen((ushort)PORT, HOST);
+    redirectServer.Listen(ushort.Parse(port), host);
 
     string[] bodyPart =
     {

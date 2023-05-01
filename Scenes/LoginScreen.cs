@@ -3,15 +3,20 @@ using System;
 
 public class LoginScreen : Control
 {
+  Game MyGame;
+  public Serilog.Core.Logger _serilogger;
+
   private Authorization authorization;
   private LineEdit textField;
   Boolean activateAuthDev = false;
-  public Serilog.Core.Logger _serilogger;
 
   [Signal] public delegate void loginSuccess(string userId);
 
   public override void _Ready()
   {
+    MyGame = GetNode<Game>("/root/Game");
+    _serilogger = MyGame._serilogger;
+
     var clientConfig = new ConfigFile();
     Godot.Error err = clientConfig.Load("res://Resources/client.cfg");
 
@@ -22,12 +27,14 @@ public class LoginScreen : Control
     }
 
     // enable/disable authentication in dev mode
-    var activateAuthDevVar = OS.GetEnvironment("ACTIVATE_AUTH_DEV") ?? clientConfig.GetValue("auth", "activate_auth_dev");
-    activateAuthDev = (Boolean)activateAuthDevVar;
+    var activateAuthDevTemp = System.Environment.GetEnvironmentVariable("ACTIVATE_AUTH_DEV") ?? clientConfig.GetValue("auth", "activate_auth_dev", false);
+    activateAuthDev = (bool)activateAuthDevTemp;
+    _serilogger.Debug("LoginScreen.cs: setting authentication dev to " + activateAuthDev.ToString());
 
     // skip the authentication flow in Debug mode and if we don't want to test it
     if (OS.IsDebugBuild() && activateAuthDev == false)
     {
+      _serilogger.Debug("LoginScreen.cs: Skipping authentication flow");
       this.GetNode<TextureRect>("NoAuthorizedRect").Visible = false;
       this.GetNode<TextureRect>("AuthLoadingRect").Visible = false;
 
@@ -36,6 +43,7 @@ public class LoginScreen : Control
     }
     else
     {
+      _serilogger.Debug("LoginScreen.cs: Launching authentication flow");
       authorization = authorization = new Authorization();
       this.AddChild(authorization);
 
