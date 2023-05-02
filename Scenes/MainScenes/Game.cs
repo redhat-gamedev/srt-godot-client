@@ -56,7 +56,9 @@ public class Game : Node
 
   // Queues for processing incoming messages
   public ConcurrentQueue<GameEvent> PlayerCreateQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<GameEvent> PlayerUpdateQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<(GameEvent ge, long ingressTime)> PlayerUpdateQueue = new ConcurrentQueue<(GameEvent ge, long ingressTime)>();
+
+  //public ConcurrentQueue<GameEvent> PlayerUpdateQueue = new ConcurrentQueue<GameEvent>();
   public ConcurrentQueue<GameEvent> PlayerDestroyQueue = new ConcurrentQueue<GameEvent>();
   public ConcurrentQueue<GameEvent> MissileCreateQueue = new ConcurrentQueue<GameEvent>();
   public ConcurrentQueue<GameEvent> MissileUpdateQueue = new ConcurrentQueue<GameEvent>();
@@ -74,6 +76,12 @@ public class Game : Node
   int PlayerDefaultMissileReloadTime = 2;
 
   /* END PLAYER DEFAULTS AND CONFIG */
+
+  float gameLag = 0;
+  float frameTimer = 0;
+  float frameMax = 1;
+  long updatesProcessed = 1;
+  long totalLag = 0;
 
   public void LoadConfig()
   {
@@ -140,6 +148,7 @@ public class Game : Node
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
+    frameTimer = 0;
     GameStopwatch.Start();
     levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
     _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
@@ -292,18 +301,25 @@ public class Game : Node
 
   void ProcessPlayerUpdate()
   {
-    GameEvent ge = null;
-    while (PlayerUpdateQueue.TryDequeue(out ge))
+    (GameEvent ge, long ingressTime) tuple = (null, 0);
+    while (PlayerUpdateQueue.TryDequeue(out tuple))
     {
-      if (null == ge)
+      if (null == tuple.ge)
       {
         _serilogger.Debug($"Game.cs: Dequeuing player update message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Verbose($"Game.cs: Dequeuing player update message for {ge.Uuid}");
-      PlayerShip ship = UpdateShipWithUUID(ge.Uuid);
-      ship.UpdateFromGameEventBuffer(ge);
+      _serilogger.Verbose($"Game.cs: Dequeuing player update message for {tuple.ge.Uuid}");
+      long localDT = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+      long DTDiff = localDT - tuple.ingressTime;
+
+      _serilogger.Verbose($"Game.cs: Msg DT: {tuple.ingressTime} / Current DT: {localDT} / Diff: {DTDiff}");
+      totalLag += DTDiff;
+      updatesProcessed += 1;
+
+      PlayerShip ship = UpdateShipWithUUID(tuple.ge.Uuid);
+      ship.UpdateFromGameEventBuffer(tuple.ge);
     }
   }
 
@@ -420,6 +436,15 @@ public class Game : Node
 
   public override void _Process(float delta)
   {
+    frameTimer += delta;
+    if (frameTimer >= frameMax)
+    {
+      gameLag = totalLag / updatesProcessed;
+      _serilogger.Debug($"Game.cs: Current processing lag: {gameLag}");
+      updatesProcessed = 1;
+      totalLag = 0;
+      frameTimer = 0;
+    }
     updateWhoAmI();
 
     // we may eventually need to throw away some of these if the FPS starts slowing

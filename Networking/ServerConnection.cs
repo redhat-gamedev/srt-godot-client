@@ -83,7 +83,16 @@ public class ServerConnection : Node
       MemoryStream st = new MemoryStream(binaryBody, false);
       GameEvent egeb = Serializer.Deserialize<GameEvent>(st);
 
-      this.ProcessGameEvent(egeb); // TODO: move this into it's own class to declutter the networking code
+      // TODO: handle when the ingress time doesn't exist
+      long messageDT = (long)message.MessageAnnotations[(Symbol)"x-opt-ingress-time"];
+      long localDT = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+      long DTDiff = localDT - messageDT;
+
+      _serilogger.Verbose($"ServerConnection.cs: Msg DT: {messageDT} / Current DT: {localDT} / Diff: {DTDiff}");
+
+      var eventTuple = (egeb, messageDT);
+
+      this.ProcessGameEvent(eventTuple); // TODO: move this into it's own class to declutter the networking code
     }
     catch (Exception ex)
     {
@@ -282,8 +291,10 @@ public class ServerConnection : Node
   ///
   /// </summary>
   /// <param name="egeb"></param>
-  private void ProcessGameEvent(GameEvent egeb)
+  private void ProcessGameEvent((GameEvent egeb, long DTDiff) tuple)
   {
+    // extract the event from the tuple
+    GameEvent egeb = tuple.egeb;
     try
     {
       switch (egeb.game_event_type)
@@ -340,7 +351,9 @@ public class ServerConnection : Node
           {
             case GameEvent.GameObjectType.GameObjectTypePlayer:
               _serilogger.Verbose($"ServerConnection.cs: Got update for player {egeb.Uuid}");
-              MyGame.PlayerUpdateQueue.Enqueue(egeb);
+              // send the whole tuple instead of the egeb part so that we can calculate the true
+              // time later
+              MyGame.PlayerUpdateQueue.Enqueue(tuple);
               break;
 
             case GameEvent.GameObjectType.GameObjectTypeMissile:
