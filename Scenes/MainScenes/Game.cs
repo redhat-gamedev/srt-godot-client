@@ -77,11 +77,27 @@ public class Game : Node
 
   /* END PLAYER DEFAULTS AND CONFIG */
 
+
+  /* Timers and stuff for lag calculations */
+
   float gameLag = 0;
   float frameTimer = 0;
   float frameMax = 1;
   long updatesProcessed = 1;
   long totalLag = 0;
+
+  /* End timer section */
+
+  /* Input de-spamming */
+  Vector2 lastVelocity = Vector2.Zero; // The player's movement direction.
+  Vector2 lastShoot = Vector2.Zero; // the player's shoot status
+
+  // the UTC epoch milliseconds of the last time we sent a command to the server
+  long lastCommandSentMs = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+  // how long to wait before sending another command
+  long sendCommandDelayMs = 10;
+
 
   public void LoadConfig()
   {
@@ -440,7 +456,7 @@ public class Game : Node
     if (frameTimer >= frameMax)
     {
       gameLag = totalLag / updatesProcessed;
-      _serilogger.Debug($"Game.cs: Current processing lag: {gameLag}");
+      _serilogger.Debug($"Game.cs: Current processing lag: {gameLag}ms");
       updatesProcessed = 1;
       totalLag = 0;
       frameTimer = 0;
@@ -834,6 +850,27 @@ public class Game : Node
 
   void ProcessInputEvent(Vector2 velocity, Vector2 shoot)
   {
+    long timeNow = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+    long timeDiff = timeNow - lastCommandSentMs;
+
+    // if the last input is the same as the current input, check how long it's been
+    // since we sent a command message
+    if (lastVelocity == velocity || lastShoot == shoot)
+    {
+      _serilogger.Verbose("Game.cs: Last command same as this command");
+      _serilogger.Verbose($"Game.cs: last: {lastCommandSentMs} now: {timeNow} diff: {timeDiff}");
+      if (timeNow - lastCommandSentMs < sendCommandDelayMs)
+      {
+        _serilogger.Verbose("Game.cs: Should NOT send another command because of the window");
+        return;
+      }
+    }
+
+    lastVelocity = velocity;
+    lastShoot = shoot;
+
+    lastCommandSentMs = timeNow;
+
     // there was some kind of input, so construct a message to send to the server
     Command cb = new Command();
     cb.Uuid = myUuid;

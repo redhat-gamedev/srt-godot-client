@@ -83,8 +83,18 @@ public class ServerConnection : Node
       MemoryStream st = new MemoryStream(binaryBody, false);
       GameEvent egeb = Serializer.Deserialize<GameEvent>(st);
 
-      // TODO: handle when the ingress time doesn't exist
-      long messageDT = (long)message.MessageAnnotations[(Symbol)"x-opt-ingress-time"];
+      long messageDT;
+      if (message.Properties != null)
+      {
+        // CreationTime is a DateTime, so cast to an offset so that we can use the
+        // Unix time easily - there may be a better way to do this
+        messageDT = ((DateTimeOffset)message.Properties.CreationTime).ToUnixTimeMilliseconds();
+      }
+      else
+      {
+        messageDT = 0;
+      }
+
       long localDT = DateTimeOffset.Now.ToUnixTimeMilliseconds();
       long DTDiff = localDT - messageDT;
 
