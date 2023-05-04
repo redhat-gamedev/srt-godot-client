@@ -65,41 +65,20 @@ public class PlayerShip : KinematicBody2D
   }
 
   /// <summary>
-  /// 
-  /// </summary>
-  /// <param name="BufferType"></param>
-  /// <returns></returns>
-  public GameEvent CreatePlayerGameEventBuffer(GameEvent.GameEventType BufferType)
-  {
-    GameEvent egeb = new GameEvent();
-    egeb.game_event_type = BufferType;
-    egeb.game_object_type = GameEvent.GameObjectType.GameObjectTypePlayer;
-    egeb.Uuid = uuid;
-
-    egeb.PositionX = (int)GlobalPosition.x;
-    egeb.PositionY = (int)GlobalPosition.y;
-
-    egeb.Angle = RotationDegrees;
-    egeb.AbsoluteVelocity = CurrentVelocity;
-
-    return egeb;
-  }
-
-  /// <summary>
-  /// 
+  ///
   /// </summary>
   /// <param name="egeb"></param>
-  public void UpdateFromGameEventBuffer(GameEvent egeb)
+  public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
-    GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    RotationDegrees = egeb.Angle;
-    CurrentVelocity = egeb.AbsoluteVelocity;
-    HitPoints = egeb.HitPoints;
+    GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+    RotationDegrees = gameObject.Angle;
+    CurrentVelocity = gameObject.AbsoluteVelocity;
+    HitPoints = gameObject.HitPoints;
   }
 
   /// <summary>
-  /// 
+  ///
   /// </summary>
   public void ExpireMissile() { MyMissile = null; }
 
@@ -151,7 +130,7 @@ public class PlayerShip : KinematicBody2D
   }
 
   /// <summary>
-  /// 
+  ///
   /// </summary>
   /// <param name="Damage"></param>
   public void TakeDamage(int Damage)

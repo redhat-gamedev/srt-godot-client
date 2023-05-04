@@ -26,14 +26,14 @@ public class SpaceMissile : Area2D
   public delegate void Hit(PlayerShip HitPlayer);
 
   /// <summary>
-  /// 
+  ///
   /// </summary>
   /// <param name="egeb"></param>
-  public void UpdateFromGameEventBuffer(GameEvent egeb)
+  public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    this.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    this.RotationDegrees = egeb.Angle;
+    this.GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+    this.RotationDegrees = gameObject.Angle;
   }
 
   public void Expire()
