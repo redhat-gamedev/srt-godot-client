@@ -55,14 +55,17 @@ public class Game : Node
   public String myUuid = null;
 
   // Queues for processing incoming messages
-  public ConcurrentQueue<GameEvent> PlayerCreateQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<(GameEvent ge, long ingressTime)> PlayerUpdateQueue = new ConcurrentQueue<(GameEvent ge, long ingressTime)>();
+  public ConcurrentQueue<GameEvent.GameObject> PlayerCreateQueue = new ConcurrentQueue<GameEvent.GameObject>();
 
-  //public ConcurrentQueue<GameEvent> PlayerUpdateQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<GameEvent> PlayerDestroyQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<GameEvent> MissileCreateQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<GameEvent> MissileUpdateQueue = new ConcurrentQueue<GameEvent>();
-  public ConcurrentQueue<GameEvent> MissileDestroyQueue = new ConcurrentQueue<GameEvent>();
+  // this is a queue of tuples that contain a game object and a time that the update arrived
+  // the time is used for lag calculations
+  public ConcurrentQueue<(GameEvent.GameObject gameObject, long ingressTime)> PlayerUpdateQueue =
+    new ConcurrentQueue<(GameEvent.GameObject gameObject, long ingressTime)>();
+
+  public ConcurrentQueue<GameEvent.GameObject> PlayerDestroyQueue = new ConcurrentQueue<GameEvent.GameObject>();
+  public ConcurrentQueue<GameEvent.GameObject> MissileCreateQueue = new ConcurrentQueue<GameEvent.GameObject>();
+  public ConcurrentQueue<GameEvent.GameObject> MissileUpdateQueue = new ConcurrentQueue<GameEvent.GameObject>();
+  public ConcurrentQueue<GameEvent.GameObject> MissileDestroyQueue = new ConcurrentQueue<GameEvent.GameObject>();
 
   /* PLAYER DEFAULTS AND CONFIG */
 
@@ -300,108 +303,109 @@ public class Game : Node
 
   void ProcessPlayerCreate()
   {
-    GameEvent ge = null;
-    while (PlayerCreateQueue.TryDequeue(out ge))
+    GameEvent.GameObject gameObject = null;
+    while (PlayerCreateQueue.TryDequeue(out gameObject))
     {
-      if (null == ge)
+      if (null == gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing player create message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Debug($"Game.cs: Dequeuing player create message for {ge.Uuid}");
-      PlayerShip newShip = CreateShipForUUID(ge.Uuid);
-      newShip.UpdateFromGameEventBuffer(ge);
+      _serilogger.Debug($"Game.cs: Dequeuing player create message for {gameObject.Uuid}");
+      PlayerShip newShip = CreateShipForUUID(gameObject.Uuid);
+      newShip.UpdateFromGameEventBuffer(gameObject);
     }
   }
 
   void ProcessPlayerUpdate()
   {
-    (GameEvent ge, long ingressTime) tuple = (null, 0);
-    while (PlayerUpdateQueue.TryDequeue(out tuple))
+    while (PlayerUpdateQueue.TryDequeue(out (GameEvent.GameObject gameObject, long ingressTime) gameUpdateTuple))
     {
-      if (null == tuple.ge)
+      if (null == gameUpdateTuple.gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing player update message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Verbose($"Game.cs: Dequeuing player update message for {tuple.ge.Uuid}");
+      _serilogger.Verbose($"Game.cs: Dequeuing player update message for {gameUpdateTuple.gameObject.Uuid}");
       long localDT = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-      long DTDiff = localDT - tuple.ingressTime;
+      long DTDiff = localDT - gameUpdateTuple.ingressTime;
 
-      _serilogger.Verbose($"Game.cs: Msg DT: {tuple.ingressTime} / Current DT: {localDT} / Diff: {DTDiff}");
+      _serilogger.Verbose($"Game.cs: Msg DT: {gameUpdateTuple.ingressTime} / Current DT: {localDT} / Diff: {DTDiff}");
       totalLag += DTDiff;
       updatesProcessed += 1;
 
-      PlayerShip ship = UpdateShipWithUUID(tuple.ge.Uuid);
-      ship.UpdateFromGameEventBuffer(tuple.ge);
+      PlayerShip ship = UpdateShipWithUUID(gameUpdateTuple.gameObject.Uuid);
+      ship.UpdateFromGameEventBuffer(gameUpdateTuple.gameObject);
     }
   }
 
   void ProcessPlayerDestroy()
   {
-    GameEvent ge = null;
-    while (PlayerDestroyQueue.TryDequeue(out ge))
+    while (PlayerDestroyQueue.TryDequeue(out GameEvent.GameObject gameObject))
     {
-      if (null == ge)
+      if (null == gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing player destroy message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Debug($"Game.cs: Dequeuing player destroy message for {ge.Uuid}");
-      DestroyShipWithUUID(ge.Uuid, ge.HitPoints);
+      _serilogger.Debug($"Game.cs: Dequeuing player destroy message for {gameObject.Uuid}");
+      DestroyShipWithUUID(gameObject.Uuid, gameObject.HitPoints);
     }
   }
 
   void ProcessMissileCreate()
   {
-    GameEvent ge = null;
-    while (MissileCreateQueue.TryDequeue(out ge))
+    while (MissileCreateQueue.TryDequeue(out GameEvent.GameObject gameObject))
     {
-      if (null == ge)
+      if (null == gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing missile create message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Debug($"Game.cs: Dequeuing missile create message for {ge.Uuid} owner {ge.OwnerUuid}");
-      SpaceMissile newMissile = CreateMissileForUUID(ge);
-      newMissile.UpdateFromGameEventBuffer(ge);
+      _serilogger.Debug($"Game.cs: Dequeuing missile create message for {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+      SpaceMissile newMissile = CreateMissileForUUID(gameObject);
+      newMissile.UpdateFromGameEventBuffer(gameObject);
     }
   }
 
   void ProcessMissileUpdate()
   {
-    GameEvent ge = null;
-    while (MissileUpdateQueue.TryDequeue(out ge))
+    while (MissileUpdateQueue.TryDequeue(out GameEvent.GameObject gameObject))
     {
-      if (null == ge)
+      if (null == gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing missile update message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Verbose($"Game.cs: Dequeuing missile update message for {ge.Uuid} owner {ge.OwnerUuid}");
-      SpaceMissile missile = UpdateMissileWithUUID(ge);
-      missile.UpdateFromGameEventBuffer(ge);
+      _serilogger.Verbose($"Game.cs: Dequeuing missile update message for {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+      SpaceMissile missile = UpdateMissileWithUUID(gameObject);
+      missile.UpdateFromGameEventBuffer(gameObject);
     }
   }
 
   void ProcessMissileDestroy()
   {
-    GameEvent ge = null;
-    while (MissileDestroyQueue.TryDequeue(out ge))
+    while (MissileDestroyQueue.TryDequeue(out GameEvent.GameObject gameObject))
     {
-      if (null == ge)
+      if (null == gameObject)
       {
+        // this should probably be impossible
         _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for null!? SKIPPING!");
         continue;
       }
 
-      _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for {ge.Uuid} owner {ge.OwnerUuid}");
-      DestroyMissileWithUUID(ge.Uuid);
+      _serilogger.Debug($"Game.cs: Dequeuing missile destroy message for {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+      DestroyMissileWithUUID(gameObject.Uuid);
     }
   }
 
@@ -696,13 +700,13 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the created missile instance</returns>
-  public SpaceMissile CreateMissileForUUID(GameEvent egeb)
+  public SpaceMissile CreateMissileForUUID(GameEvent.GameObject gameObject)
   {
     // check if a key already exists for the uuid and return that missile if it does
     SpaceMissile existingMissile;
-    if (missileObjects.TryGetValue(egeb.Uuid, out existingMissile))
+    if (missileObjects.TryGetValue(gameObject.Uuid, out existingMissile))
     {
-      _serilogger.Debug($"Game.cs: Existing missile found for UUID: {egeb.Uuid}");
+      _serilogger.Debug($"Game.cs: Existing missile found for UUID: {gameObject.Uuid}");
 
       // check if it's our own missile that we're finally getting the create for
       if (existingMissile.uuid == myShip.MyMissile.uuid)
@@ -717,18 +721,18 @@ public class Game : Node
     SpaceMissile missileInstance = (SpaceMissile)PackedMissile.Instance();
 
     // set the missile's UUID to the message's UUID
-    missileInstance.uuid = egeb.Uuid;
+    missileInstance.uuid = gameObject.Uuid;
 
     // missiles have owners, so find the right player (hopefully)
     // TODO: this could conceivably blow up if we got missile information before we got player information
-    missileInstance.MyPlayer = playerObjects[egeb.OwnerUuid];
+    missileInstance.MyPlayer = playerObjects[gameObject.OwnerUuid];
 
     // players own missiles, inversely
     missileInstance.MyPlayer.MyMissile = missileInstance;
 
-    missileObjects.Add(egeb.Uuid, missileInstance);
-    missileInstance.GlobalPosition = new Vector2(egeb.PositionX, egeb.PositionY);
-    missileInstance.RotationDegrees = egeb.Angle;
+    missileObjects.Add(gameObject.Uuid, missileInstance);
+    missileInstance.GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+    missileInstance.RotationDegrees = gameObject.Angle;
     _serilogger.Debug("Game.cs: Adding missile to scene tree");
     AddChild(missileInstance);
     //missileInstance.GetNode<AudioStreamPlayer>("FireSound").Play();
@@ -814,14 +818,14 @@ public class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the missile instance</returns>
-  public SpaceMissile UpdateMissileWithUUID(GameEvent egeb)
+  public SpaceMissile UpdateMissileWithUUID(GameEvent.GameObject gameObject)
   {
     SpaceMissile missileInstance;
-    if (!missileObjects.TryGetValue(egeb.Uuid, out missileInstance))
+    if (!missileObjects.TryGetValue(gameObject.Uuid, out missileInstance))
     {
       // the missile existed before we started, so we didn't get the create event
-      _serilogger.Debug($"Game.cs: UpdateMissileWithUUID: missile doesn't exist, creating {egeb.Uuid} with owner {egeb.OwnerUuid}");
-      missileInstance = this.CreateMissileForUUID(egeb);
+      _serilogger.Debug($"Game.cs: UpdateMissileWithUUID: missile doesn't exist, creating {gameObject.Uuid} with owner {gameObject.OwnerUuid}");
+      missileInstance = this.CreateMissileForUUID(gameObject);
     }
 
     return missileInstance;

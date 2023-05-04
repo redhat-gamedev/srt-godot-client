@@ -311,35 +311,49 @@ public class ServerConnection : Node
       {
         case GameEvent.GameEventType.GameEventTypeCreate:
           _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [create]");
-          switch (egeb.game_object_type)
-          {
-            case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Debug($"ServerConnection.cs: Got create for a ship {egeb.Uuid}");
-              MyGame.PlayerCreateQueue.Enqueue(egeb);
-              break;
 
-            case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Debug($"ServerConnection.cs: Got create for a missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-              MyGame.MissileCreateQueue.Enqueue(egeb);
-              break;
+          // create messages should only have one object at this time, but we should still iterate
+          // over them anyway.
+
+          // iterate over the GameObjects in egeb and handle each
+          foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
+          {
+            switch (gameObject.GameObjectType)
+            {
+              case GameEvent.GameObjectType.GameObjectTypePlayer:
+                _serilogger.Debug($"ServerConnection.cs: Got create for a ship {gameObject.Uuid}");
+                MyGame.PlayerCreateQueue.Enqueue(gameObject);
+                break;
+
+              case GameEvent.GameObjectType.GameObjectTypeMissile:
+                _serilogger.Debug($"ServerConnection.cs: Got create for a missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                MyGame.MissileCreateQueue.Enqueue(gameObject);
+                break;
+            }
           }
-          break;
+        break;
 
         case GameEvent.GameEventType.GameEventTypeDestroy:
           _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [destroy]");
 
-          switch (egeb.game_object_type)
+          // destroy messages should only have one object at this time, but we should still iterate
+          // over them anyway.
+
+          // iterate over the GameObjects in egeb and handle each
+          foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
           {
-            case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Debug($"ServerConnection.cs: Got destroy for player {egeb.Uuid}");
-              MyGame.PlayerDestroyQueue.Enqueue(egeb);
-              break;
+            switch (gameObject.GameObjectType)
+            {
+              case GameEvent.GameObjectType.GameObjectTypePlayer:
+                _serilogger.Debug($"ServerConnection.cs: Got destroy for player {gameObject.Uuid}");
+                MyGame.PlayerDestroyQueue.Enqueue(gameObject);
+                break;
 
-            case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-              MyGame.MissileDestroyQueue.Enqueue(egeb);
-              break;
-
+              case GameEvent.GameObjectType.GameObjectTypeMissile:
+                _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                MyGame.MissileDestroyQueue.Enqueue(gameObject);
+                break;
+            }
           }
           break;
 
@@ -350,26 +364,34 @@ public class ServerConnection : Node
         case GameEvent.GameEventType.GameEventTypeUpdate:
           _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
 
-          // find/update the Node2D
-          if (egeb.Uuid == null || egeb.Uuid.Length < 1) // TODO: any additional validation goes here
+          // updates may have many objects to handle
+          // iterate over the GameObjects in egeb and handle each
+          foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
           {
-            _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
-            return;
-          }
+            // make a new tuple of the gameObject and the dtdiff
+            (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, tuple.DTDiff);
 
-          switch (egeb.game_object_type)
-          {
-            case GameEvent.GameObjectType.GameObjectTypePlayer:
-              _serilogger.Verbose($"ServerConnection.cs: Got update for player {egeb.Uuid}");
-              // send the whole tuple instead of the egeb part so that we can calculate the true
-              // time later
-              MyGame.PlayerUpdateQueue.Enqueue(tuple);
-              break;
+            if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
+            {
+              _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
+              return;
+            }
 
-            case GameEvent.GameObjectType.GameObjectTypeMissile:
-              _serilogger.Verbose($"ServerConnection.cs: Got update for missile {egeb.Uuid} owner {egeb.OwnerUuid}");
-              MyGame.MissileUpdateQueue.Enqueue(egeb);
-              break;
+            switch (gameObject.GameObjectType)
+            {
+              case GameEvent.GameObjectType.GameObjectTypePlayer:
+                _serilogger.Verbose($"ServerConnection.cs: Got update for player {gameObject.Uuid}");
+                // send the whole tuple instead of the egeb part so that we can calculate the true
+                // time later
+                MyGame.PlayerUpdateQueue.Enqueue(newTuple);
+                break;
+
+              case GameEvent.GameObjectType.GameObjectTypeMissile:
+                // TODO: probably should modify the missile stuff to take the dtdiff as well
+                _serilogger.Verbose($"ServerConnection.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                MyGame.MissileUpdateQueue.Enqueue(gameObject);
+                break;
+            }
           }
           break;
 
