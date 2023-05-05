@@ -67,6 +67,10 @@ public class Game : Node
   public ConcurrentQueue<GameEvent.GameObject> MissileUpdateQueue = new ConcurrentQueue<GameEvent.GameObject>();
   public ConcurrentQueue<GameEvent.GameObject> MissileDestroyQueue = new ConcurrentQueue<GameEvent.GameObject>();
 
+  public ConcurrentQueue<GameEvent> GameEventBufferQueue = new ConcurrentQueue<GameEvent>();
+
+  public int bufferMessagesCount = 2;
+
   /* PLAYER DEFAULTS AND CONFIG */
 
   float PlayerDefaultThrust = 1f;
@@ -170,7 +174,9 @@ public class Game : Node
     frameTimer = 0;
     GameStopwatch.Start();
     levelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
-    _serilogger = new LoggerConfiguration().MinimumLevel.ControlledBy(levelSwitch).WriteTo.Console().CreateLogger();
+    _serilogger = new LoggerConfiguration().MinimumLevel
+      .ControlledBy(levelSwitch).WriteTo
+      .Console(outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}").CreateLogger();
     _serilogger.Information("Space Ring Things (SRT) Game Client v???");
 
     LoadConfig();
