@@ -364,33 +364,51 @@ public class ServerConnection : Node
         case GameEvent.GameEventType.GameEventTypeUpdate:
           _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
 
-          // updates may have many objects to handle
-          // iterate over the GameObjects in egeb and handle each
-          foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
+          // we got an update, so add it to the GameEventBufferQueue
+          MyGame.GameEventBufferQueue.Enqueue(egeb);
+
+          // if the GameEventBufferQueue is shorter than the bufferMessagesCount, return
+          if (MyGame.GameEventBufferQueue.Count < MyGame.bufferMessagesCount)
           {
-            // make a new tuple of the gameObject and the dtdiff
-            (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, tuple.DTDiff);
+            _serilogger.Verbose("ServerConnection.cs: GameEventBufferQueue is too short, returning");
+            return;
+          }
 
-            if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
+          // since we made it here, we have at least bufferMessageCount in the queue,
+          // so we can dequeue the first event on the GameEventBufferQueue and process it
+          if (MyGame.GameEventBufferQueue.TryDequeue(out GameEvent dequeuedEvent))
+          {
+            // we found something to dequeue, so process the objects in the message
+            _serilogger.Verbose("ServerConnection.cs: GameEventBufferQueue has something, processing...");
+
+            // updates may have many objects to handle
+            // iterate over the GameObjects in egeb and handle each
+            foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
             {
-              _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
-              return;
-            }
+              // make a new tuple of the gameObject and the dtdiff
+              (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, tuple.DTDiff);
 
-            switch (gameObject.GameObjectType)
-            {
-              case GameEvent.GameObjectType.GameObjectTypePlayer:
-                _serilogger.Verbose($"ServerConnection.cs: Got update for player {gameObject.Uuid}");
-                // send the whole tuple instead of the egeb part so that we can calculate the true
-                // time later
-                MyGame.PlayerUpdateQueue.Enqueue(newTuple);
-                break;
+              if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
+              {
+                _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
+                return;
+              }
 
-              case GameEvent.GameObjectType.GameObjectTypeMissile:
-                // TODO: probably should modify the missile stuff to take the dtdiff as well
-                _serilogger.Verbose($"ServerConnection.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
-                MyGame.MissileUpdateQueue.Enqueue(gameObject);
-                break;
+              switch (gameObject.GameObjectType)
+              {
+                case GameEvent.GameObjectType.GameObjectTypePlayer:
+                  _serilogger.Verbose($"ServerConnection.cs: Got update for player {gameObject.Uuid}");
+                  // send the whole tuple instead of the egeb part so that we can calculate the true
+                  // time later
+                  MyGame.PlayerUpdateQueue.Enqueue(newTuple);
+                  break;
+
+                case GameEvent.GameObjectType.GameObjectTypeMissile:
+                  // TODO: probably should modify the missile stuff to take the dtdiff as well
+                  _serilogger.Verbose($"ServerConnection.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                  MyGame.MissileUpdateQueue.Enqueue(gameObject);
+                  break;
+              }
             }
           }
           break;

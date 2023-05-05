@@ -32,8 +32,10 @@ public class SpaceMissile : Area2D
   public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    this.GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
-    this.RotationDegrees = gameObject.Angle;
+    float xPos = Mathf.Lerp(GlobalPosition.x, gameObject.PositionX, 0.5f);
+    float yPos = Mathf.Lerp(GlobalPosition.y, gameObject.PositionY, 0.5f);
+    GlobalPosition = new Vector2(xPos, yPos);
+    RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
   }
 
   public void Expire()
