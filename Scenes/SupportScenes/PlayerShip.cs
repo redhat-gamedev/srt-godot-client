@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using redhatgamedev.srt.v1;
 
-public class PlayerShip : KinematicBody2D
+public partial class PlayerShip : CharacterBody2D
 {
   public float Thrust = 1f; // effective acceleration
 
@@ -45,7 +45,7 @@ public class PlayerShip : KinematicBody2D
 
   Node2D shipThing;
 
-  Sprite hitPointRing;
+  Sprite2D hitPointRing;
 
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
@@ -58,7 +58,7 @@ public class PlayerShip : KinematicBody2D
     shipThing = (Node2D)GetParent();
     Label playerIDLabel = (Label)shipThing.GetNode("Stat/IDLabel");
 
-    hitPointRing = (Sprite)GetNode("HitPointShader");
+    hitPointRing = (Sprite2D)GetNode("HitPointShader");
 
     // TODO: deal with really long UUIDs
     playerIDLabel.Text = uuid;
@@ -74,8 +74,8 @@ public class PlayerShip : KinematicBody2D
 
     HitPoints = gameObject.HitPoints;
 
-    float xPos = Mathf.Lerp(GlobalPosition.x, gameObject.PositionX, 0.5f);
-    float yPos = Mathf.Lerp(GlobalPosition.y, gameObject.PositionY, 0.5f);
+    float xPos = Mathf.Lerp(GlobalPosition.X, gameObject.PositionX, 0.5f);
+    float yPos = Mathf.Lerp(GlobalPosition.Y, gameObject.PositionY, 0.5f);
     GlobalPosition = new Vector2(xPos, yPos);
     RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
     CurrentVelocity = Mathf.Lerp(CurrentVelocity, gameObject.AbsoluteVelocity, 0.5f);
@@ -99,7 +99,7 @@ public class PlayerShip : KinematicBody2D
     if (MyMissile != null) { return; }
 
     PackedScene missileScene = (PackedScene)ResourceLoader.Load("res://SpaceMissile.tscn");
-    MyMissile = (SpaceMissile)missileScene.Instance();
+    MyMissile = (SpaceMissile)missileScene.Instantiate();
 
     MyMissile.uuid = Guid.NewGuid().ToString();
 
@@ -164,13 +164,13 @@ public class PlayerShip : KinematicBody2D
     _serilogger.Verbose($"PlayerShip.cs: hitpoint ratio {hitPointRatio} for UUID {uuid}");
 
     ShaderMaterial ringShader = (ShaderMaterial)hitPointRing.Material;
-    ringShader.SetShaderParam("fill_ratio", hitPointRatio);
-    _serilogger.Verbose($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParam("fill_ratio")}");
+    ringShader.SetShaderParameter("fill_ratio", hitPointRatio);
+    _serilogger.Verbose($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParameter("fill_ratio")}");
   }
 
-  public override void _Process(float delta)
+  public override void _Process(double delta)
   {
-    CheckMissileReload(delta);
+    CheckMissileReload((float)delta);
     UpdateHitPointRing();
   }
 

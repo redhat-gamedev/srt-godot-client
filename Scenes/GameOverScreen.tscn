@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Assets/UIElements/MainTheme.tres" type="Theme" id=1]
 [ext_resource path="res://Scenes/GameOverScreen.cs" type="Script" id=2]
-[ext_resource path="res://Assets/Artwork/2023_SRT_gameover.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Artwork/2023_SRT_gameover.png" type="Texture2D" id=3]
 
 [node name="GameOverScreen" type="CanvasLayer"]
 script = ExtResource( 2 )
@@ -12,20 +12,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
-margin_left = 704.0
-margin_top = 341.0
-margin_right = 1215.0
-margin_bottom = 738.0
+offset_left = 704.0
+offset_top = 341.0
+offset_right = 1215.0
+offset_bottom = 738.0
 
-[node name="Sprite" type="TextureRect" parent="CenterContainer/VBoxContainer"]
-margin_right = 511.0
-margin_bottom = 346.0
+[node name="Sprite2D" type="TextureRect" parent="CenterContainer/VBoxContainer"]
+offset_right = 511.0
+offset_bottom = 346.0
 texture = ExtResource( 3 )
 
 [node name="TryAgainButton" type="Button" parent="CenterContainer/VBoxContainer"]
-margin_top = 350.0
-margin_right = 511.0
-margin_bottom = 397.0
+offset_top = 350.0
+offset_right = 511.0
+offset_bottom = 397.0
 theme = ExtResource( 1 )
 text = "Try Again?"
 

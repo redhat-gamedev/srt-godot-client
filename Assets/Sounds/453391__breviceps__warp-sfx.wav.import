@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/453391__breviceps__warp-sfx.wav-96ec91a726067e9a4ee85d8ca7905dbd.sample"
+type="AudioStreamWAV"
+uid="uid://g1mrnmlyov6w"
+path="res://.godot/imported/453391__breviceps__warp-sfx.wav-96ec91a726067e9a4ee85d8ca7905dbd.sample"
 
 [deps]
 
 source_file="res://Assets/Sounds/453391__breviceps__warp-sfx.wav"
-dest_files=[ "res://.import/453391__breviceps__warp-sfx.wav-96ec91a726067e9a4ee85d8ca7905dbd.sample" ]
+dest_files=["res://.godot/imported/453391__breviceps__warp-sfx.wav-96ec91a726067e9a4ee85d8ca7905dbd.sample"]
 
 [params]
 

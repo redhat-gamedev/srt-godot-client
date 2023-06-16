@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public class GameOverScreen : CanvasLayer
+public partial class GameOverScreen : CanvasLayer
 {
   // Declare member variables here. Examples:
   // private int a = 2;

@@ -7,7 +7,7 @@ using redhatgamedev.srt.v1;
 using Serilog;
 
 // This class is autoloaded
-public class Game : Node
+public partial class Game : Node
 {
   Serilog.Core.LoggingLevelSwitch levelSwitch = new Serilog.Core.LoggingLevelSwitch();
   public Serilog.Core.Logger _serilogger;
@@ -23,11 +23,11 @@ public class Game : Node
   TextureRect speedometer;
   TextureRect missileDisplay;
   TextureRect missileReadyIndicator;
-  Texture missileReadyIndicatorReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
-  Texture missileReadyIndicatorNotReady = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
-  Texture missileReadyIndicatorDefault = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
+  Texture2D missileReadyIndicatorReady = ResourceLoader.Load<Texture2D>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_green.png");
+  Texture2D missileReadyIndicatorNotReady = ResourceLoader.Load<Texture2D>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator_red.png");
+  Texture2D missileReadyIndicatorDefault = ResourceLoader.Load<Texture2D>("res://Assets/UIElements/HUD/HUD_missile_status_circle_indicator.png");
   TextureRect gameRadar;
-  Texture shipBlip;
+  Texture2D shipBlip;
   Label fasterControl;
   bool fasterControlLit;
   Label slowerControl;
@@ -44,7 +44,6 @@ public class Game : Node
   float radarRefreshTimer = 0;
 
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
-  [Export]
   Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
   Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip = null;
@@ -195,11 +194,13 @@ public class Game : Node
 
 
     PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
-    loginScreen = (LoginScreen)packedAuthScene.Instance();
+    loginScreen = (LoginScreen)packedAuthScene.Instantiate();
     AddChild(loginScreen);
 
     // wait a notification the login flow
-    loginScreen.Connect("loginSuccess", this, "_on_login_success");
+    loginScreen.LoginSuccess += OnLoginSuccess;
+
+    //loginScreen.Connect("loginSuccess", new Callable(this, "_on_login_success"));
   }
 
   public void displayGameOverScreen()
@@ -209,7 +210,7 @@ public class Game : Node
     ourGui.Hide();
 
     PackedScene packedGameOverScene = (PackedScene)ResourceLoader.Load("res://Scenes/GameOverScreen.tscn");
-    GameOverScreen gameOver = (GameOverScreen)packedGameOverScene.Instance();
+    GameOverScreen gameOver = (GameOverScreen)packedGameOverScene.Instantiate();
     AddChild(gameOver);
   }
 
@@ -219,7 +220,7 @@ public class Game : Node
     inGame = true;
 
     // load the ship blip texture
-    shipBlip = ResourceLoader.Load<Texture>("res://Assets/UIElements/HUD/ship_blip.png");
+    shipBlip = ResourceLoader.Load<Texture2D>("res://Assets/UIElements/HUD/ship_blip.png");
 
     // TODO: should we be adding the GUI to the scene instead of displaying its elements?
     // find the HUD to show its elements
@@ -238,9 +239,9 @@ public class Game : Node
       {
         Node2D playerForCamera = myShip;
         Camera2D playerCamera = playerForCamera.GetNode<Camera2D>("Camera2D");
-        Listener2D theListener = playerForCamera.GetNode<Listener2D>("Listener2D");
+        AudioListener2D theListener = playerForCamera.GetNode<AudioListener2D>("AudioListener2D");
 
-        if (!playerCamera.Current) { playerCamera.MakeCurrent(); }
+        if (!playerCamera.IsCurrent()) { playerCamera.MakeCurrent(); }
         if (!theListener.IsCurrent()) { theListener.MakeCurrent(); }
       }
     }
@@ -281,10 +282,10 @@ public class Game : Node
       if (player == myUuid) continue;
       _serilogger.Verbose($"Game.cs: Drawing radar dot for {player}");
 
-      _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.x}:{playerShip.Position.y}");
+      _serilogger.Verbose($"Game.cs: Player {player} is at position {playerShip.Position.X}:{playerShip.Position.Y}");
 
-      float deltaX = myShip.Position.x - playerShip.Position.x;
-      float deltaY = myShip.Position.y - playerShip.Position.y;
+      float deltaX = myShip.Position.X - playerShip.Position.X;
+      float deltaY = myShip.Position.Y - playerShip.Position.Y;
 
       _serilogger.Verbose($"Game.cs: Relative position to player is {deltaX}:{deltaY}");
 
@@ -299,7 +300,7 @@ public class Game : Node
       _serilogger.Verbose($"Game.cs: Scaled position to player is {scaledX}:{scaledY}");
 
       // add a blip at the scaled location offset from the center
-      Sprite newBlip = new Sprite();
+      Sprite2D newBlip = new Sprite2D();
       newBlip.Texture = shipBlip;
       newBlip.Offset = new Vector2(finalX, finalY);
 
@@ -460,9 +461,9 @@ public class Game : Node
     }
   }
 
-  public override void _Process(float delta)
+  public override void _Process(double delta)
   {
-    frameTimer += delta;
+    frameTimer += (float)delta;
     if (frameTimer >= frameMax)
     {
       gameLag = totalLag / updatesProcessed;
@@ -491,7 +492,7 @@ public class Game : Node
     {
       if (Input.IsActionPressed("rotate_right"))
       {
-        velocity.x += 1;
+        velocity.X += 1;
         turnRightControlLit = true;
       }
       else
@@ -501,7 +502,7 @@ public class Game : Node
 
       if (Input.IsActionPressed("rotate_left"))
       {
-        velocity.x -= 1;
+        velocity.X -= 1;
         turnLeftControlLit = true;
       }
       else
@@ -511,7 +512,7 @@ public class Game : Node
 
       if (Input.IsActionPressed("thrust_forward"))
       {
-        velocity.y += 1;
+        velocity.Y += 1;
         fasterControlLit = true;
       }
       else
@@ -521,7 +522,7 @@ public class Game : Node
 
       if (Input.IsActionPressed("thrust_reverse"))
       {
-        velocity.y -= 1;
+        velocity.Y -= 1;
         slowerControlLit = true;
       }
       else
@@ -531,7 +532,7 @@ public class Game : Node
 
       if (Input.IsActionPressed("fire"))
       {
-        shoot.y = 1;
+        shoot.Y = 1;
         fireControlLit = true;
       }
       else
@@ -553,7 +554,7 @@ public class Game : Node
       // we are in a graphical mode
       // TODO: only if in graphical debug mode
       // TODO: should also probably use timer node
-      radarRefreshTimer += delta;
+      radarRefreshTimer += (float)delta;
       if (radarRefreshTimer >= radarRefreshTime)
       {
         radarRefreshTimer = 0;
@@ -614,8 +615,8 @@ public class Game : Node
     if (!playerObjects.TryGetValue(uuid, out shipInstance))
     {
       // we didn't find a matching ship in the playerObjects dictionary, so create a new instance
-      Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instance();
-      shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a KinematicBody2D) child node
+      Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instantiate();
+      shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a CharacterBody2D) child node
       shipInstance.uuid = uuid;
 
       // set the instance defaults to match what we learned from the announce
@@ -724,7 +725,7 @@ public class Game : Node
 
     // TODO: refactor missile setup into a dedicated function to prevent all this duplicated code
     // set up the new missile
-    SpaceMissile missileInstance = (SpaceMissile)PackedMissile.Instance();
+    SpaceMissile missileInstance = (SpaceMissile)PackedMissile.Instantiate();
 
     // set the missile's UUID to the message's UUID
     missileInstance.uuid = gameObject.Uuid;
@@ -748,7 +749,7 @@ public class Game : Node
 
     // Run the missile animation
     _serilogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
-    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
+    AnimatedSprite2D missileFiringAnimation = (AnimatedSprite2D)missileInstance.GetNode("Animations");
     missileFiringAnimation.Frame = 0;
     missileFiringAnimation.Play("launch");
     return missileInstance;
@@ -778,7 +779,7 @@ public class Game : Node
     // set up the new missile
     PackedScene packedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
 
-    SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instance();
+    SpaceMissile missileInstance = (SpaceMissile)packedMissile.Instantiate();
 
     // set the missile's UUID to the message's UUID
     missileInstance.uuid = uuid;
@@ -814,7 +815,7 @@ public class Game : Node
 
     // Run the missile animation
     _serilogger.Debug($"Game.cs: Starting missile animation for {missileInstance.uuid}");
-    AnimatedSprite missileFiringAnimation = (AnimatedSprite)missileInstance.GetNode("Animations");
+    AnimatedSprite2D missileFiringAnimation = (AnimatedSprite2D)missileInstance.GetNode("Animations");
     missileFiringAnimation.Frame = 0;
     missileFiringAnimation.Play("launch");
   }
@@ -891,8 +892,8 @@ public class Game : Node
       {
         _serilogger.Verbose("Game.cs: Got move command");
         cb.command_type = Command.CommandType.CommandTypeMove;
-        cb.InputX = (int)velocity.x;
-        cb.InputY = (int)velocity.y;
+        cb.InputX = (int)velocity.X;
+        cb.InputY = (int)velocity.Y;
         serverConnection.SendCommand(cb);
       }
 
@@ -919,7 +920,7 @@ public class Game : Node
   public override void _Notification(int what)
   {
     // when the game window is closed, you get this notification
-    if (what == MainLoop.NotificationWmQuitRequest)
+    if (what == NotificationWMCloseRequest)
     {
       _serilogger.Information("Game.cs: Got quit notification");
       // check if our UUID is set. If it isn't, we don't have to send a leave
@@ -938,17 +939,18 @@ public class Game : Node
     }
   }
 
-  void _on_login_success(string userId)
+  void OnLoginSuccess(string userId)
   {
     // user is authenticated. Now we try to connect to the server
     serverConnection = new ServerConnection();
     this.AddChild(serverConnection);
     this.myUuid = userId;
 
-    serverConnection.Connect("isServerConnected", this, "_on_is_server_connected");
+    serverConnection.ServerConnected += OnServerConnected;
+    //serverConnection.Connect("isServerConnected", new Callable(this, "_on_is_server_connected"));
   }
 
-  void _on_is_server_connected(bool isServerConnected)
+  void OnServerConnected(bool isServerConnected)
   {
     // At this point the user is authenticated and the server is connected. Now we can go to the game
     if (isServerConnected && this.myUuid != null)

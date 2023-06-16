@@ -8,7 +8,7 @@ using ProtoBuf;
 using redhatgamedev.srt.v1;
 
 // We use this class to represent a remote connection to the game servers
-public class ServerConnection : Node
+public partial class ServerConnection : Node
 {
   Game MyGame;
 
@@ -32,7 +32,7 @@ public class ServerConnection : Node
   ReceiverLink securityOutReceiver;
   public static readonly string UUID = System.Guid.NewGuid().ToString();
 
-  [Signal] public delegate void isServerConnected(bool connected);
+  [Signal] public delegate void ServerConnectedEventHandler(bool connected);
 
   public override void _Ready()
   {
@@ -201,7 +201,7 @@ public class ServerConnection : Node
       _serilogger.Error("ServerConnection.cs: AMQP connection/session failed for " + url);
       _serilogger.Error($"ServerConnection.cs: {ex.Message}");
 
-      EmitSignal("isServerConnected", false);
+      EmitSignal(SignalName.ServerConnected, false);
       return;
     }
 
@@ -253,7 +253,7 @@ public class ServerConnection : Node
     announceMessage.security_type = Security.SecurityType.SecurityTypeAnnounce;
     SendSecurity(announceMessage);
 
-    EmitSignal("isServerConnected", true);
+    EmitSignal(SignalName.ServerConnected, true);
   }
 
   private void ProcessSecurity(Security security)

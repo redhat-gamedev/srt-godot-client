@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/ship-explode.wav-a54bcff1e029bd59be7d28a7cad78ae7.sample"
+type="AudioStreamWAV"
+uid="uid://q881scn73iae"
+path="res://.godot/imported/ship-explode.wav-a54bcff1e029bd59be7d28a7cad78ae7.sample"
 
 [deps]
 
 source_file="res://Assets/Sounds/ship-explode.wav"
-dest_files=[ "res://.import/ship-explode.wav-a54bcff1e029bd59be7d28a7cad78ae7.sample" ]
+dest_files=["res://.godot/imported/ship-explode.wav-a54bcff1e029bd59be7d28a7cad78ae7.sample"]
 
 [params]
 
