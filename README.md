@@ -12,7 +12,7 @@ sleves and do a little bit of build/operations work. See the development notes
 below for instructions on how to do that.
 
 ## Development Notes and Prerequisites
-The game is currently being built with Linux and using Godot 3.5.1 with Mono.
+The game is currently being built with Linux and using Godot 4.0.3 with Mono.
 
 This repo now uses submodules to point to the `Networking/protobufs`. Make sure to
 `--recurse-submodules` when you clone. If you've already cloned prior to this
@@ -189,7 +189,7 @@ realm you created earlier (check the dropdown at the upper left).
 ![Create realm](doc/configure_github.png)
 
 When you have filled out the Keycloak page for configuring the GitHub identity
-provider, you can click _Add_. 
+provider, you can click _Add_.
 
 #### Register the GitHub OAuth Application
 
@@ -227,7 +227,7 @@ token_api_url= "<set the /token url from keycloak>"; // Realm settings/OpenID En
 	* Clicking on the client you created earlier
 	* Clicking on _Credentials_
 
-  **Be very careful** when copying and pasting the secret to not accidentally introduce any spaces before or after the secret. 
+  **Be very careful** when copying and pasting the secret to not accidentally introduce any spaces before or after the secret.
 
 	Good: `client_secret="Z7Be5rfu8BUtfxmLOcViU9yK1TsjkHJP"`
 
