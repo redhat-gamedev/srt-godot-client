@@ -2,14 +2,18 @@
 
 importer="mp3"
 type="AudioStreamMP3"
-path="res://.import/upbeat-space-chillout-14194.mp3-9856a7ca6aa1c43d329087079b9abe6b.mp3str"
+uid="uid://b772u4v33h2du"
+path="res://.godot/imported/upbeat-space-chillout-14194.mp3-9856a7ca6aa1c43d329087079b9abe6b.mp3str"
 
 [deps]
 
 source_file="res://Assets/Sounds/upbeat-space-chillout-14194.mp3"
-dest_files=[ "res://.import/upbeat-space-chillout-14194.mp3-9856a7ca6aa1c43d329087079b9abe6b.mp3str" ]
+dest_files=["res://.godot/imported/upbeat-space-chillout-14194.mp3-9856a7ca6aa1c43d329087079b9abe6b.mp3str"]
 
 [params]
 
 loop=true
 loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

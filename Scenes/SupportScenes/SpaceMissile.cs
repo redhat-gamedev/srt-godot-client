@@ -2,7 +2,7 @@ using Godot;
 using System;
 using redhatgamedev.srt.v1;
 
-public class SpaceMissile : Area2D
+public partial class SpaceMissile : Area2D
 {
   Game MyGame;
 
@@ -19,11 +19,12 @@ public class SpaceMissile : Area2D
 
   public String uuid;
 
-  AnimatedSprite missileAnimation;
-  AnimatedSprite missileExplosion;
+  AnimatedSprite2D missileAnimation;
+  AnimatedSprite2D missileExplosion;
 
+// I don't think this signal is used any more in the client
   [Signal]
-  public delegate void Hit(PlayerShip HitPlayer);
+  public delegate void HitEventHandler(PlayerShip HitPlayer);
 
   /// <summary>
   ///
@@ -32,8 +33,8 @@ public class SpaceMissile : Area2D
   public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    float xPos = Mathf.Lerp(GlobalPosition.x, gameObject.PositionX, 0.5f);
-    float yPos = Mathf.Lerp(GlobalPosition.y, gameObject.PositionY, 0.5f);
+    float xPos = Mathf.Lerp(GlobalPosition.X, gameObject.PositionX, 0.5f);
+    float yPos = Mathf.Lerp(GlobalPosition.Y, gameObject.PositionY, 0.5f);
     GlobalPosition = new Vector2(xPos, yPos);
     RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
   }
@@ -42,8 +43,8 @@ public class SpaceMissile : Area2D
   {
     // stop the regular animation and play the explosion animation
     _serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
-    GetNode<Sprite>("Sprite").Hide();
-    GetNode<AnimatedSprite>("Animations").Hide();
+    GetNode<Sprite2D>("Sprite2D").Hide();
+    GetNode<AnimatedSprite2D>("Animations").Hide();
     missileAnimation.Stop();
     missileAnimation.Frame = 0;
     missileExplosion.Play();
@@ -61,12 +62,12 @@ public class SpaceMissile : Area2D
     // connect the hit signal to handling the hit
     //Connect(nameof(Hit), this, "_HandleHit");
 
-    missileAnimation = GetNode<AnimatedSprite>("Animations");
-    missileExplosion = GetNode<AnimatedSprite>("Explosion");
+    missileAnimation = GetNode<AnimatedSprite2D>("Animations");
+    missileExplosion = GetNode<AnimatedSprite2D>("Explosion");
     //GetNode<AudioStreamPlayer>("FireSound").Play();
   }
 
-  public override void _Process(float delta)
+  public override void _Process(double delta)
   {
     if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
     {
@@ -82,7 +83,7 @@ public class SpaceMissile : Area2D
     QueueFree();
   }
 
-  public override void _PhysicsProcess(float delta)
+  public override void _PhysicsProcess(double delta)
   {
     // TODO disable the collision shape until the missile is "away" from the ship
 
@@ -90,7 +91,7 @@ public class SpaceMissile : Area2D
     // then move the missile in the direction of that vector
     Vector2 velocity = new Vector2(0, -1);
     velocity = velocity.Rotated(Rotation);
-    velocity = velocity * MissileSpeed * delta;
+    velocity = velocity * MissileSpeed * (float)delta;
     Position += velocity;
   }
 

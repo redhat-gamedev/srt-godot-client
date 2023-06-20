@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public class LoginScreen : Control
+public partial class LoginScreen : Control
 {
   Game MyGame;
   public Serilog.Core.Logger _serilogger;
@@ -10,7 +10,7 @@ public class LoginScreen : Control
   private LineEdit textField;
   Boolean activateAuthDev = false;
 
-  [Signal] public delegate void loginSuccess(string userId);
+  [Signal] public delegate void LoginSuccessEventHandler(string userId);
 
   public override void _Ready()
   {
@@ -48,7 +48,7 @@ public class LoginScreen : Control
       this.AddChild(authorization);
 
       // listening for the Auth results: fail or success
-      authorization.Connect("playerAuthenticated", this, "_on_is_player_authenticated");
+      authorization.Connect("playerAuthenticated", new Callable(this, "_on_is_player_authenticated"));
     }
   }
 
@@ -65,7 +65,7 @@ public class LoginScreen : Control
 
     //if the player is authenticated, remove this node and notify the Main Game
     QueueFree();
-    EmitSignal("loginSuccess", authorization.getUserId());
+    EmitSignal(SignalName.LoginSuccess, authorization.getUserId());
   }
 
   private void _on_RetryButton_pressed()
@@ -77,6 +77,6 @@ public class LoginScreen : Control
   private void _on_JoinButton_button_up()
   {
     QueueFree();
-    EmitSignal("loginSuccess", textField.Text);
+    EmitSignal(SignalName.LoginSuccess, textField.Text);
   }
 }

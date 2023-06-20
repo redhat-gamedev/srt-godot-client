@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Scenes/MainScenes/GUI.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Scenes/MainScenes/Game.cs" type="Script" id=2]
-[ext_resource path="res://Assets/Artwork/2023_Starfield.png" type="Texture" id=3]
+[ext_resource path="res://Assets/Artwork/2023_Starfield.png" type="Texture2D" id=3]
 [ext_resource path="res://Assets/Sounds/upbeat-space-chillout-14194.mp3" type="AudioStream" id=4]
 
 [sub_resource type="Environment" id=1]
@@ -28,7 +28,7 @@ script = ExtResource( 2 )
 [node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground"]
 motion_mirroring = Vector2( 1920, 1080 )
 
-[node name="Sprite" type="Sprite" parent="ParallaxBackground/ParallaxLayer"]
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer"]
 texture = ExtResource( 3 )
 centered = false
 

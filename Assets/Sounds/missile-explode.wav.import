@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/missile-explode.wav-8068349e02a8e598514952602fde4d74.sample"
+type="AudioStreamWAV"
+uid="uid://vqf551nkca77"
+path="res://.godot/imported/missile-explode.wav-8068349e02a8e598514952602fde4d74.sample"
 
 [deps]
 
 source_file="res://Assets/Sounds/missile-explode.wav"
-dest_files=[ "res://.import/missile-explode.wav-8068349e02a8e598514952602fde4d74.sample" ]
+dest_files=["res://.godot/imported/missile-explode.wav-8068349e02a8e598514952602fde4d74.sample"]
 
 [params]
 

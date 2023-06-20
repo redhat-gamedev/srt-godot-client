@@ -1,8 +1,8 @@
 [gd_scene load_steps=9 format=2]
 
-[ext_resource path="res://Assets/Sprites/Ships/ship.png" type="Texture" id=1]
+[ext_resource path="res://Assets/Sprites/Ships/ship.png" type="Texture2D" id=1]
 [ext_resource path="res://Scenes/SupportScenes/PlayerShip.cs" type="Script" id=2]
-[ext_resource path="res://Assets/UIElements/ShipShaders/whitebox.png" type="Texture" id=3]
+[ext_resource path="res://Assets/UIElements/ShipShaders/whitebox.png" type="Texture2D" id=3]
 [ext_resource path="res://Assets/UIElements/ShipShaders/HitPointRing.gdshader" type="Shader" id=4]
 [ext_resource path="res://Assets/Sounds/ship-explode.wav" type="AudioStream" id=5]
 [ext_resource path="res://Assets/Sounds/453391__breviceps__warp-sfx.wav" type="AudioStream" id=6]
@@ -23,20 +23,20 @@ shader_param/blue = 0.0
 [node name="Stat" type="Node2D" parent="."]
 
 [node name="IDLabel" type="Label" parent="Stat"]
-margin_left = -35.0
-margin_top = 28.0
-margin_right = 35.0
-margin_bottom = 42.0
+offset_left = -35.0
+offset_top = 28.0
+offset_right = 35.0
+offset_bottom = 42.0
 grow_horizontal = 2
 text = "UUIDUUID"
 align = 1
 
 [node name="LinearVelocity" type="Label" parent="Stat"]
 visible = false
-margin_left = -33.0
-margin_top = 41.0
-margin_right = 33.0
-margin_bottom = 55.0
+offset_left = -33.0
+offset_top = 41.0
+offset_right = 33.0
+offset_bottom = 55.0
 text = "LinVel"
 align = 1
 __meta__ = {
@@ -45,10 +45,10 @@ __meta__ = {
 
 [node name="AngularVelocity" type="Label" parent="Stat"]
 visible = false
-margin_left = -33.0
-margin_top = 53.0
-margin_right = 33.0
-margin_bottom = 67.0
+offset_left = -33.0
+offset_top = 53.0
+offset_right = 33.0
+offset_bottom = 67.0
 text = "AngVel"
 align = 1
 __meta__ = {
@@ -57,10 +57,10 @@ __meta__ = {
 
 [node name="HitPoints" type="Label" parent="Stat"]
 visible = false
-margin_left = -33.0
-margin_top = 68.0
-margin_right = 33.0
-margin_bottom = 82.0
+offset_left = -33.0
+offset_top = 68.0
+offset_right = 33.0
+offset_bottom = 82.0
 text = "HP"
 align = 1
 __meta__ = {
@@ -69,10 +69,10 @@ __meta__ = {
 
 [node name="Position" type="Label" parent="Stat"]
 visible = false
-margin_left = -33.0
-margin_top = 81.0
-margin_right = 33.0
-margin_bottom = 95.0
+offset_left = -33.0
+offset_top = 81.0
+offset_right = 33.0
+offset_bottom = 95.0
 text = "Position"
 align = 1
 __meta__ = {
@@ -81,25 +81,25 @@ __meta__ = {
 
 [node name="Hex" type="Label" parent="Stat"]
 visible = false
-margin_left = -33.0
-margin_top = 93.0
-margin_right = 33.0
-margin_bottom = 107.0
+offset_left = -33.0
+offset_top = 93.0
+offset_right = 33.0
+offset_bottom = 107.0
 text = "MyHex"
 align = 1
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="PlayerShip" type="KinematicBody2D" parent="."]
+[node name="PlayerShip" type="CharacterBody2D" parent="."]
 script = ExtResource( 2 )
 
-[node name="Sprite" type="Sprite" parent="PlayerShip"]
+[node name="Sprite2D" type="Sprite2D" parent="PlayerShip"]
 scale = Vector2( 0.25, 0.25 )
 texture = ExtResource( 1 )
 
 [node name="ShipHitBox" type="CollisionPolygon2D" parent="PlayerShip"]
-polygon = PoolVector2Array( -5, -31, 5, -31, 11, -10, 16, 5, 26, 10, 29, 28, -17, 28, -28, 28, -28, 15, -25, 10, -16, 4 )
+polygon = PackedVector2Array( -5, -31, 5, -31, 11, -10, 16, 5, 26, 10, 29, 28, -17, 28, -28, 28, -28, 15, -25, 10, -16, 4 )
 
 [node name="RemoteTransform2D" type="RemoteTransform2D" parent="PlayerShip"]
 remote_path = NodePath("../../Stat")
@@ -107,12 +107,12 @@ update_rotation = false
 
 [node name="Camera2D" type="Camera2D" parent="PlayerShip"]
 
-[node name="HitPointShader" type="Sprite" parent="PlayerShip"]
+[node name="HitPointShader" type="Sprite2D" parent="PlayerShip"]
 material = SubResource( 1 )
 scale = Vector2( 1.3, 1.3 )
 texture = ExtResource( 3 )
 
-[node name="Listener2D" type="Listener2D" parent="PlayerShip"]
+[node name="AudioListener2D" type="AudioListener2D" parent="PlayerShip"]
 
 [node name="ExplodeSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
 stream = ExtResource( 5 )

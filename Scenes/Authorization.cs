@@ -4,7 +4,7 @@ using System.Text;
 using Godot.Collections;
 using System.Threading.Tasks;
 
-public class Authorization : Control
+public partial class Authorization : Control
 {
   Game MyGame;
 
@@ -23,8 +23,8 @@ public class Authorization : Control
   const string save_path = SAVE_DIR + "token.dat";
   const string HTML_REDIRECTION_PAGE = "res://Assets/Artwork/Home.html";
 
-  TCP_Server redirectServer = new TCP_Server();
-  [Signal] public delegate void playerAuthenticated(bool isAuthorized);
+  TcpServer redirectServer = new TcpServer();
+  [Signal] public delegate void PlayerAuthenticatedEventHandler(bool isAuthorized);
 
   //Load the configuration and call the login process
   public override void _Ready()
@@ -57,12 +57,12 @@ public class Authorization : Control
 
   // Wait for a Oauth callback from the Identity manager to receive an auth code, then ask for a token
   // When the token is received close the server
-  public override async void _Process(float delta)
+  public override async void _Process(double delta)
   {
     if (redirectServer.IsConnectionAvailable())
     {
       _serilogger.Debug("Authorization.cs: get Auth Code from callback");
-      StreamPeerTCP connection = redirectServer.TakeConnection();
+      StreamPeerTcp connection = redirectServer.TakeConnection();
 
       string request = connection.GetString(connection.GetAvailableBytes());
 
@@ -74,7 +74,7 @@ public class Authorization : Control
 
         var response = loadHTML(HTML_REDIRECTION_PAGE);
         connection.PutData(Encoding.ASCII.GetBytes("HTTP/1.1 200 OK Content-Type: text/html; charset=utf-8 \r\n\r\n"));
-        connection.PutData(response.ToUTF8());
+        connection.PutData(response.ToUtf8Buffer());
 
         _serilogger.Debug("Authorization.cs: stop server");
         connection.DisconnectFromHost();
@@ -125,7 +125,7 @@ public class Authorization : Control
 
     var payload = this.decodeJWTPayload(token);
 
-    if (!payload.Contains("preferred_username"))
+    if (!payload.ContainsKey("preferred_username"))
     {
       return null;
     }
@@ -169,9 +169,9 @@ public class Authorization : Control
       "scope=openId"
     };
 
-    var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer, header, HttpClient.Method.Post, String.Join("&", bodyPart));
 
-    if (bodyParsed.Contains("access_token"))
+    if (bodyParsed.ContainsKey("access_token"))
     {
       token = bodyParsed["access_token"].ToString();
       refreshToken = bodyParsed["refresh_token"].ToString();
@@ -209,9 +209,9 @@ public class Authorization : Control
       "token_type_hint=access_token"
     };
 
-    var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer + "/introspect", header, HttpClient.Method.Post, String.Join("&", bodyPart));
 
-    if (bodyParsed.Contains("exp"))
+    if (bodyParsed.ContainsKey("exp"))
     {
       var expiration = Double.Parse(bodyParsed["exp"].ToString());
 
@@ -245,9 +245,9 @@ public class Authorization : Control
       "grant_type=refresh_token"
     };
 
-    var bodyParsed = await makeRequest(tokenServer, header, HTTPClient.Method.Post, String.Join("&", bodyPart));
+    var bodyParsed = await makeRequest(tokenServer, header, HttpClient.Method.Post, String.Join("&", bodyPart));
 
-    if (bodyParsed.Contains("access_token"))
+    if (bodyParsed.ContainsKey("access_token"))
     {
       token = bodyParsed["access_token"].ToString();
       saveToken();
@@ -261,24 +261,22 @@ public class Authorization : Control
 
   private void saveToken()
   {
-    var dir = new Directory();
-    if (!dir.DirExists(SAVE_DIR))
+    if (!DirAccess.DirExistsAbsolute(SAVE_DIR))
     {
-      dir.MakeDirRecursive(SAVE_DIR);
+      DirAccess.MakeDirRecursiveAbsolute(SAVE_DIR);
     }
 
-    var file = new File();
-    var error = file.Open(save_path, File.ModeFlags.Write);
+    var fileObj = FileAccess.Open(save_path, FileAccess.ModeFlags.Write);
 
-    if (error == Error.Ok)
+    if (fileObj != null)
     {
       var tokens = new Dictionary();
 
       tokens["token"] = token;
       tokens["refreshToken"] = refreshToken;
 
-      file.StoreVar(tokens);
-      file.Close();
+      fileObj.StoreVar(tokens);
+      fileObj.Close();
 
       _serilogger.Debug("Authorization.cs: Token saved successfully");
     }
@@ -286,19 +284,18 @@ public class Authorization : Control
 
   private void loadToken()
   {
-    var file = new File();
-    if (file.FileExists(save_path))
+    if (FileAccess.FileExists(save_path))
     {
-      var error = file.Open(save_path, File.ModeFlags.Read);
+      var fileObj = FileAccess.Open(save_path, FileAccess.ModeFlags.Read);
 
-      if (error == Error.Ok)
+      if (fileObj != null)
       {
-        var tokens = file.GetVar() as Dictionary;
+        var tokens = (Dictionary)fileObj.GetVar(true); // as Dictionary;
 
         token = tokens["token"].ToString();
         refreshToken = tokens["refreshToken"].ToString();
 
-        file.Close();
+        fileObj.Close();
         _serilogger.Debug("Authorization.cs: get local token");
       }
     }
@@ -306,14 +303,13 @@ public class Authorization : Control
 
   private string loadHTML(string path)
   {
-    var file = new File();
     var HTML = "<!DOCTYPE html><html><body><p>Logged In</p></body></html>";
 
-    if (file.FileExists(path))
+    if (FileAccess.FileExists(path))
     {
-      file.Open(path, File.ModeFlags.Read);
-      HTML = file.GetAsText().Replace("	", "\t").Insert(0, "\n");
-      file.Close();
+      var fileObj = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+      HTML = fileObj.GetAsText().Replace("	", "\t").Insert(0, "\n");
+      fileObj.Close();
 
       return HTML;
     }
@@ -321,11 +317,11 @@ public class Authorization : Control
     return HTML;
   }
 
-  private async Task<Dictionary> makeRequest(string url, string[] header, HTTPClient.Method method, string body, String signal = "request_completed")
+  private async Task<Dictionary> makeRequest(string url, string[] header, HttpClient.Method method, string body, String signal = "request_completed")
   {
-    HTTPRequest httpRequest = new HTTPRequest();
+    HttpRequest httpRequest = new HttpRequest();
     AddChild(httpRequest);
-    var Err = httpRequest.Request(url, header, true, method, body);
+    var Err = httpRequest.Request(url, header, method, body);
 
     if (Err != Error.Ok)
     {
@@ -334,9 +330,9 @@ public class Authorization : Control
     }
 
     var response = await ToSignal(httpRequest, signal);
-    JSONParseResult json = JSON.Parse(Encoding.UTF8.GetString(response[3] as byte[]));
+    Json json = (Json)Json.ParseString(Encoding.UTF8.GetString((byte[])response[3]));
 
-    return json.Result as Dictionary;
+    return (Dictionary)json.Data;
   }
 
   private Dictionary decodeJWTPayload(string jwt)
@@ -344,7 +340,7 @@ public class Authorization : Control
     var parts = jwt.Split(".");
     var payloadPart = parts[1];
 
-    switch (payloadPart.Length() % 4)
+    switch (payloadPart.Length % 4)
     {
       case 2:
         payloadPart += "==";
@@ -355,8 +351,8 @@ public class Authorization : Control
     }
 
     var payload = Marshalls.Base64ToRaw(payloadPart.Replace("_", "/").Replace("-", "+"));
-    var json = JSON.Parse(Encoding.UTF8.GetString(payload as byte[]));
+    var json = (Json)Json.ParseString(Encoding.UTF8.GetString((byte[])payload));
 
-    return json.Result as Dictionary;
+    return (Dictionary)json.Data;
   }
 }

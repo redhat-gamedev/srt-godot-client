@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/400126__harrietniamh__sci-fi-warp.wav-9ce8a08cb344f24f56a8a17dca05420e.sample"
+type="AudioStreamWAV"
+uid="uid://ceu5djg6fcvtd"
+path="res://.godot/imported/400126__harrietniamh__sci-fi-warp.wav-9ce8a08cb344f24f56a8a17dca05420e.sample"
 
 [deps]
 
 source_file="res://Assets/Sounds/400126__harrietniamh__sci-fi-warp.wav"
-dest_files=[ "res://.import/400126__harrietniamh__sci-fi-warp.wav-9ce8a08cb344f24f56a8a17dca05420e.sample" ]
+dest_files=["res://.godot/imported/400126__harrietniamh__sci-fi-warp.wav-9ce8a08cb344f24f56a8a17dca05420e.sample"]
 
 [params]
 

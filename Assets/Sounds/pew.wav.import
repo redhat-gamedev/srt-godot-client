@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/pew.wav-0b9d8756e2eb62097adac21c09f1953b.sample"
+type="AudioStreamWAV"
+uid="uid://cnr4et0qxhmdv"
+path="res://.godot/imported/pew.wav-0b9d8756e2eb62097adac21c09f1953b.sample"
 
 [deps]
 
 source_file="res://Assets/Sounds/pew.wav"
-dest_files=[ "res://.import/pew.wav-0b9d8756e2eb62097adac21c09f1953b.sample" ]
+dest_files=["res://.godot/imported/pew.wav-0b9d8756e2eb62097adac21c09f1953b.sample"]
 
 [params]
 
