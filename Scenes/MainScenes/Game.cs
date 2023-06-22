@@ -104,6 +104,8 @@ public partial class Game : Node
   // how long to wait before sending another command
   long sendCommandDelayMs = 10;
 
+  AudioStreamPlayer backgroundMusic;
+
 
   public void LoadConfig()
   {
@@ -191,6 +193,7 @@ public partial class Game : Node
     turnLeftControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnLeft");
     turnRightControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/TurnRight");
     fireControl = gameUI.GetNode<Label>("ControlIndicators/ControlsBox/FireButton");
+    backgroundMusic = GetNode<AudioStreamPlayer>("AudioStreamPlayer");
 
 
     PackedScene packedAuthScene = (PackedScene)ResourceLoader.Load("res://Scenes/LoginScreen.tscn");
@@ -463,6 +466,8 @@ public partial class Game : Node
 
   public override void _Process(double delta)
   {
+    PlayBackgroundMusic();
+
     frameTimer += (float)delta;
     if (frameTimer >= frameMax)
     {
@@ -964,6 +969,25 @@ public partial class Game : Node
       }
 
       _serilogger.Information("Game.cs: join failed TODO tell player why");
+    }
+  }
+
+  void PlayBackgroundMusic()
+  {
+    if (inGame)
+    {
+      // if background music is playing, do nothing
+      if (backgroundMusic.Playing)
+      {
+        return;
+      }
+
+      // we should be playing the music if we're in-game
+      backgroundMusic.Play();
+    }
+    else // we're not in game, so stop the music
+    {
+      backgroundMusic.Stop();
     }
   }
 }
