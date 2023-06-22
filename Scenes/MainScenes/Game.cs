@@ -66,7 +66,8 @@ public partial class Game : Node
   public ConcurrentQueue<GameEvent.GameObject> MissileUpdateQueue = new ConcurrentQueue<GameEvent.GameObject>();
   public ConcurrentQueue<GameEvent.GameObject> MissileDestroyQueue = new ConcurrentQueue<GameEvent.GameObject>();
 
-  public ConcurrentQueue<GameEvent> GameEventBufferQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<(GameEvent gameEvent, long DTDiff)> GameUpdateBufferQueue =
+    new ConcurrentQueue<(GameEvent gameEvent, long DTDiff)>();
 
   public int bufferMessagesCount = 2;
 
@@ -311,6 +312,57 @@ public partial class Game : Node
     }
   }
 
+  void ProcessGameUpdateBuffer()
+  {
+    // if the GameEventBufferQueue is shorter than the bufferMessagesCount, return
+    if (GameUpdateBufferQueue.Count < bufferMessagesCount)
+    {
+      _serilogger.Verbose("Game.cs: GameUpdateBufferQueue is too short, returning");
+      return;
+    }
+
+    // since we made it here, we have at least bufferMessageCount in the queue,
+    // so we can dequeue the first event on the GameEventBufferQueue and process it
+    if (GameUpdateBufferQueue.TryDequeue(out (GameEvent theEvent, long theDTDiff) tuple))
+    {
+      // we found something to dequeue, so process the objects in the message
+      _serilogger.Verbose("Game.cs: GameUpdateBufferQueue has something, processing...");
+      GameEvent dequeuedEvent = tuple.theEvent;
+      long DTDiff = tuple.theDTDiff;
+
+      // updates may have many objects to handle
+      // iterate over the GameObjects in egeb and handle each
+      foreach (GameEvent.GameObject gameObject in dequeuedEvent.GameObjects)
+      {
+        // TODO: i don't think this new tuple is required since we just created the tuple above when we dequeued
+        // make a new tuple of the gameObject and the dtdiff
+        (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, DTDiff);
+
+        if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
+        {
+          _serilogger.Warning("Game.cs: got update event with invalid UUID, IGNORING...");
+          return;
+        }
+
+        switch (gameObject.GameObjectType)
+        {
+          case GameEvent.GameObjectType.GameObjectTypePlayer:
+            _serilogger.Verbose($"Game.cs: Got update for player {gameObject.Uuid}");
+            // send the whole tuple instead of the egeb part so that we can calculate the true
+            // time later
+            PlayerUpdateQueue.Enqueue(newTuple);
+            break;
+
+          case GameEvent.GameObjectType.GameObjectTypeMissile:
+            // TODO: probably should modify the missile stuff to take the dtdiff as well
+            _serilogger.Verbose($"Game.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+            MissileUpdateQueue.Enqueue(gameObject);
+            break;
+        }
+      }
+    }
+  }
+
   void ProcessPlayerCreate()
   {
     GameEvent.GameObject gameObject = null;
@@ -478,6 +530,8 @@ public partial class Game : Node
       frameTimer = 0;
     }
     updateWhoAmI();
+
+    ProcessGameUpdateBuffer();
 
     // we may eventually need to throw away some of these if the FPS starts slowing
     ProcessPlayerCreate();
