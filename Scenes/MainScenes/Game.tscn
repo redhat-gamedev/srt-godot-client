@@ -1,42 +1,40 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=6 format=3 uid="uid://ce38ibusb6wr3"]
 
-[ext_resource path="res://Scenes/MainScenes/GUI.tscn" type="PackedScene" id=1]
-[ext_resource path="res://Scenes/MainScenes/Game.cs" type="Script" id=2]
-[ext_resource path="res://Assets/Artwork/2023_Starfield.png" type="Texture2D" id=3]
-[ext_resource path="res://Assets/Sounds/upbeat-space-chillout-14194.mp3" type="AudioStream" id=4]
+[ext_resource type="PackedScene" uid="uid://cifmdi4suncxj" path="res://Scenes/MainScenes/GUI.tscn" id="1"]
+[ext_resource type="Script" path="res://Scenes/MainScenes/Game.cs" id="2"]
+[ext_resource type="Texture2D" uid="uid://be8ucw3kpex5h" path="res://Assets/Artwork/2023_Starfield.png" id="3"]
+[ext_resource type="AudioStream" uid="uid://bomsdvgsagvra" path="res://Assets/Sounds/SRT_B_L2-80bpm-24bit.wav" id="4_vkpmj"]
 
-[sub_resource type="Environment" id=1]
+[sub_resource type="Environment" id="1"]
 background_mode = 4
 background_canvas_max_layer = 1
 glow_enabled = true
-glow_levels/1 = true
-glow_levels/2 = true
-glow_levels/4 = true
-glow_levels/6 = true
-glow_levels/7 = true
+glow_levels/1 = 1.0
+glow_levels/2 = 1.0
+glow_levels/4 = 1.0
+glow_levels/6 = 1.0
+glow_levels/7 = 1.0
 glow_intensity = 0.1
 glow_blend_mode = 0
 glow_hdr_scale = 0.05
-glow_bicubic_upscale = true
-glow_high_quality = true
 
 [node name="Game" type="Node"]
-script = ExtResource( 2 )
+script = ExtResource("2")
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
 
 [node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground"]
-motion_mirroring = Vector2( 1920, 1080 )
+motion_mirroring = Vector2(1920, 1080)
 
 [node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer"]
-texture = ExtResource( 3 )
+texture = ExtResource("3")
 centered = false
 
-[node name="GUI" parent="." instance=ExtResource( 1 )]
+[node name="GUI" parent="." instance=ExtResource("1")]
 visible = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = ExtResource( 4 )
+stream = ExtResource("4_vkpmj")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 1 )
+environment = SubResource("1")
