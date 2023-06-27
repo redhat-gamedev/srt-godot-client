@@ -34,8 +34,6 @@ public partial class ServerConnection : Node
 
   [Signal] public delegate void ServerConnectedEventHandler(bool connected);
 
-  UInt32 sequenceNumber = 0;
-
   public override void _Ready()
   {
     MyGame = GetNode<Game>("/root/Game");
@@ -85,14 +83,21 @@ public partial class ServerConnection : Node
       MemoryStream st = new MemoryStream(binaryBody, false);
       GameEvent egeb = Serializer.Deserialize<GameEvent>(st);
 
-      if (egeb.Sequence > sequenceNumber)
+      // for game update messages, check the sequence. otherwise, ignore the sequence number
+      if (egeb.game_event_type == GameEvent.GameEventType.GameEventTypeUpdate)
       {
-        _serilogger.Verbose("ServerConnection.cs: Previous sequence number: " + sequenceNumber + " New sequence number: " + egeb.Sequence);
-        sequenceNumber = egeb.Sequence;
-      }
-      else
-      {
-        return; // ignore any message that's out of sequence
+        if (egeb.Sequence > MyGame.sequenceNumber)
+        {
+          _serilogger.Verbose("ServerConnection.cs: Previous sequence number: " + MyGame.sequenceNumber + " New sequence number: " + egeb.Sequence);
+          MyGame.sequenceNumber = egeb.Sequence;
+        }
+        else
+        {
+          _serilogger.Debug($"ServerConnection.cs: Update message was out of sequence");
+          _serilogger.Debug($"ServerConnection.cs: {MyGame.sequenceNumber} vs {egeb.Sequence}");
+          _serilogger.Debug($"ServerConnection.cs: {egeb.game_event_type}");
+          return; // ignore out of sequence updates
+        }
       }
 
       long messageDT;
@@ -317,7 +322,7 @@ public partial class ServerConnection : Node
   {
     // extract the event from the tuple
     GameEvent egeb = tuple.egeb;
-    _serilogger.Debug("ServerConnection.cs: Processing game event");
+    _serilogger.Verbose("ServerConnection.cs: Processing game event");
     try
     {
       switch (egeb.game_event_type)
@@ -359,11 +364,13 @@ public partial class ServerConnection : Node
             {
               case GameEvent.GameObjectType.GameObjectTypePlayer:
                 _serilogger.Debug($"ServerConnection.cs: Got destroy for player {gameObject.Uuid}");
+                _serilogger.Debug($"ServerConnection.cs: Sequence number {egeb.Sequence}");
                 MyGame.PlayerDestroyQueue.Enqueue(gameObject);
                 break;
 
               case GameEvent.GameObjectType.GameObjectTypeMissile:
                 _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                _serilogger.Debug($"ServerConnection.cs: Sequence number {egeb.Sequence}");
                 MyGame.MissileDestroyQueue.Enqueue(gameObject);
                 break;
             }
@@ -375,7 +382,7 @@ public partial class ServerConnection : Node
           break;
 
         case GameEvent.GameEventType.GameEventTypeUpdate:
-          _serilogger.Debug("ServerConnection.cs: EntityGameEventBuffer [update]");
+          _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
 
           // we got an update, so add it to the GameEventBufferQueue
           MyGame.GameUpdateBufferQueue.Enqueue((egeb, tuple.DTDiff));

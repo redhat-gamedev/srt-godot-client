@@ -44,8 +44,8 @@ public partial class Game : Node
   float radarRefreshTimer = 0;
 
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
-  Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
-  Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
+  public Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
+  public Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip = null;
 
   PackedScene PackedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
@@ -69,7 +69,9 @@ public partial class Game : Node
   public ConcurrentQueue<(GameEvent gameEvent, long DTDiff)> GameUpdateBufferQueue =
     new ConcurrentQueue<(GameEvent gameEvent, long DTDiff)>();
 
-  public int bufferMessagesCount = 2;
+  // use auto-implemented properties?
+  public UInt32 bufferMessagesCount = 2;
+  public UInt32 sequenceNumber = 0;
 
   /* PLAYER DEFAULTS AND CONFIG */
 
@@ -909,8 +911,8 @@ public partial class Game : Node
     // if we don't, do nothing, since there's nothing displayed yet to remove
     if (missileObjects.TryGetValue(uuid, out missileInstance))
     {
-      missileInstance.Expire();
-      missileObjects.Remove(uuid);
+      _serilogger.Debug($"Game.cs: DestroyMissileWithUUID Expiring {uuid} with sequence {sequenceNumber}");
+      missileInstance.Expire(sequenceNumber);
     }
     else
     {
@@ -982,6 +984,10 @@ public partial class Game : Node
     if (what == NotificationWMCloseRequest)
     {
       _serilogger.Information("Game.cs: Got quit notification");
+
+      // stop the background music
+      backgroundMusic.Stop();
+
       // check if our UUID is set. If it isn't, we don't have to send a leave
       // message for our player, so we can just return
       if (myUuid == null) return;

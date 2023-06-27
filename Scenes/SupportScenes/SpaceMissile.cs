@@ -19,6 +19,9 @@ public partial class SpaceMissile : Area2D
 
   public String uuid;
 
+  private bool markedForDestruction = false;
+  private UInt32 destroyedSequenceNumber; // the sequence when this missile was marked for destruction
+
   AnimatedSprite2D missileAnimation;
   AnimatedSprite2D missileExplosion;
 
@@ -32,6 +35,12 @@ public partial class SpaceMissile : Area2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
+    // if the missile is marked for destruction, don't bother processing the update here
+    if (markedForDestruction)
+    {
+      return;
+    }
+
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
     float xPos = Mathf.Lerp(GlobalPosition.X, gameObject.PositionX, 0.5f);
     float yPos = Mathf.Lerp(GlobalPosition.Y, gameObject.PositionY, 0.5f);
@@ -39,8 +48,12 @@ public partial class SpaceMissile : Area2D
     RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
   }
 
-  public void Expire()
+  public void Expire(UInt32 sequenceNumber)
   {
+    // mark for destruction
+    markedForDestruction = true;
+    destroyedSequenceNumber = sequenceNumber;
+
     // stop the regular animation and play the explosion animation
     _serilogger.Debug($"SpaceMissile.cs: missile {uuid} expiring");
     GetNode<Sprite2D>("Sprite2D").Hide();
@@ -69,20 +82,46 @@ public partial class SpaceMissile : Area2D
 
   public override void _Process(double delta)
   {
+    // TODO: should probably switch this to some kind of signal
     if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
     {
       missileAnimation.Frame = 0;
       missileAnimation.Play("travel");
     }
+
+    // check if we should be removed
+    UInt32 sequenceDiff = MyGame.bufferMessagesCount + destroyedSequenceNumber;
+    if (markedForDestruction && MyGame.sequenceNumber > sequenceDiff)
+    {
+      _serilogger.Verbose($"SpaceMissile.cs: missile {uuid} marked for destruction {destroyedSequenceNumber}");
+      _serilogger.Verbose($"SpaceMissile.cs: missile {uuid} current sequence {MyGame.sequenceNumber} + {MyGame.bufferMessagesCount} = {sequenceDiff}");
+
+      // check if the animation is still playing
+      if (missileExplosion.IsPlaying())
+      {
+        _serilogger.Verbose($"SpaceMissile.cs: missile being destroyed but animation still playing");
+        // if it is, then we're still waiting for the animation to finish
+        return;
+      }
+
+      // once the animation is finished, remove the missile from the server's
+      // list because it's truly gone now
+      MyGame.missileObjects.Remove(uuid);
+
+      // fully destroy the missile
+      QueueFree();
+    }
   }
 
   void _on_Explosion_animation_finished()
   {
-    _serilogger.Debug($"SpaceMissile.cs: Explosion animation finished - freeing queue");
-    // when the explosion animation finishes, remove the missile from the scene
-    QueueFree();
+    _serilogger.Debug($"SpaceMissile.cs: Explosion animation finished - hiding missile {uuid}");
+    // when the explosion animation finishes, hide the missile from the scene for later destruction
+    Hide();
   }
 
+  // TODO: Investigate whether this conflicts with receiving the updates about
+  // our own missile
   public override void _PhysicsProcess(double delta)
   {
     // TODO disable the collision shape until the missile is "away" from the ship
