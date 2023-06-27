@@ -128,10 +128,10 @@ public partial class SpaceMissile : Area2D
 
     // create a new vector and rotate it by the current heading of the missile
     // then move the missile in the direction of that vector
-    Vector2 velocity = new Vector2(0, -1);
-    velocity = velocity.Rotated(Rotation);
-    velocity = velocity * MissileSpeed * (float)delta;
-    Position += velocity;
+    //Vector2 velocity = new Vector2(0, -1);
+    //velocity = velocity.Rotated(Rotation);
+    //velocity = velocity * MissileSpeed * (float)delta;
+    //Position += velocity;
   }
 
   //void _onSpaceMissileBodyEntered(Node body)

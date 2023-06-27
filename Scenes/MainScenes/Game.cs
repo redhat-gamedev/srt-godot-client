@@ -738,12 +738,13 @@ public partial class Game : Node
       _serilogger.Debug($"Game.cs: checking hitpoints for {uuid}");
       if (hitPoints <= 0)
       {
+        // TODO: would need to play the explode animation
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
         shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
       }
       else
       {
-        _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, warp out");
+        _serilogger.Debug($"Game.cs: hitpoints for {uuid} is > 0, warp out");
         shipInstance.GetNode<AudioStreamPlayer2D>("WarpOutSound").Play();
       }
 
