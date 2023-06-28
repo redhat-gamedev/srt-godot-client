@@ -29,6 +29,12 @@ public partial class SpaceMissile : Area2D
   [Signal]
   public delegate void HitEventHandler(PlayerShip HitPlayer);
 
+  // when the missile is first created, it should be recently initialized, which tells
+  // us to ignore lerping and wait for updates, although we can be initialized with a
+  // rotation and velocity so
+  public bool recentlyInitialized = true;
+  Vector2 targetPosition;
+
   /// <summary>
   ///
   /// </summary>
@@ -41,11 +47,22 @@ public partial class SpaceMissile : Area2D
       return;
     }
 
+    // on the first update, we are no longer recently initialized
+    recentlyInitialized = false;
+
     _serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
-    float xPos = Mathf.Lerp(GlobalPosition.X, gameObject.PositionX, 0.5f);
-    float yPos = Mathf.Lerp(GlobalPosition.Y, gameObject.PositionY, 0.5f);
-    GlobalPosition = new Vector2(xPos, yPos);
-    RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
+    //Position = new Vector2(gameObject.PositionX, gameObject.PositionY);
+
+    targetPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+
+    // don't bother lerping angle or speed
+    RotationDegrees = gameObject.Angle;
+    MissileSpeed = (int)gameObject.AbsoluteVelocity;
+
+    //_serilogger.Verbose($"SpaceMissile.cs: updating missile {uuid}");
+    //targetPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+    //targetRotation = gameObject.Angle;
+    //targetVelocity = gameObject.AbsoluteVelocity;
   }
 
   public void Expire(UInt32 sequenceNumber)
@@ -82,9 +99,23 @@ public partial class SpaceMissile : Area2D
 
   public override void _Process(double delta)
   {
+    // lerp the interp
+    // TODO: if we were recently initialized, move us via basic math instead
+
+    if (recentlyInitialized)
+    {
+      _serilogger.Debug($"SpaceMissile.cs: missile {uuid} recently initialized, skipping");
+    }
+
+    if (!recentlyInitialized)
+    {
+      Position = Position.Lerp(targetPosition, 0.2f);
+    }
+
     // TODO: should probably switch this to some kind of signal
     if (missileAnimation.Animation == "launch" && missileAnimation.Frame > 30)
     {
+      _serilogger.Debug($"SpaceMissile.cs: missile {uuid} launch animation finished, playing travel animation");
       missileAnimation.Frame = 0;
       missileAnimation.Play("travel");
     }
@@ -126,12 +157,6 @@ public partial class SpaceMissile : Area2D
   {
     // TODO disable the collision shape until the missile is "away" from the ship
 
-    // create a new vector and rotate it by the current heading of the missile
-    // then move the missile in the direction of that vector
-    //Vector2 velocity = new Vector2(0, -1);
-    //velocity = velocity.Rotated(Rotation);
-    //velocity = velocity * MissileSpeed * (float)delta;
-    //Position += velocity;
   }
 
   //void _onSpaceMissileBodyEntered(Node body)

@@ -378,7 +378,7 @@ public partial class Game : Node
       }
 
       _serilogger.Debug($"Game.cs: Dequeuing player create message for {gameObject.Uuid}");
-      PlayerShip newShip = CreateShipForUUID(gameObject.Uuid);
+      PlayerShip newShip = CreateShipForUUID(gameObject);
       newShip.UpdateFromGameEventBuffer(gameObject);
     }
   }
@@ -402,7 +402,7 @@ public partial class Game : Node
       totalLag += DTDiff;
       updatesProcessed += 1;
 
-      PlayerShip ship = UpdateShipWithUUID(gameUpdateTuple.gameObject.Uuid);
+      PlayerShip ship = UpdateShipWithUUID(gameUpdateTuple.gameObject);
       ship.UpdateFromGameEventBuffer(gameUpdateTuple.gameObject);
     }
   }
@@ -661,9 +661,9 @@ public partial class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the created ship instance</returns>
-  public PlayerShip CreateShipForUUID(string uuid)
+  public PlayerShip CreateShipForUUID(GameEvent.GameObject gameObject)
   {
-    _serilogger.Debug("Game.cs: CreateShipForUUID: " + uuid);
+    _serilogger.Debug("Game.cs: CreateShipForUUID: " + gameObject.Uuid);
     // TODO: check to ensure it doesn't already exist
 
     PlayerShip shipInstance;
@@ -673,12 +673,15 @@ public partial class Game : Node
     //       it doesn't know about, but that could happen before we've received the announce. It's nice to
     //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on
     //       joining
-    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    if (!playerObjects.TryGetValue(gameObject.Uuid, out shipInstance))
     {
       // we didn't find a matching ship in the playerObjects dictionary, so create a new instance
       Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instantiate();
       shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a CharacterBody2D) child node
-      shipInstance.uuid = uuid;
+      shipInstance.uuid = gameObject.Uuid;
+      shipInstance.GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+      shipInstance.RotationDegrees = gameObject.Angle;
+      shipInstance.CurrentVelocity = gameObject.AbsoluteVelocity;
 
       // set the instance defaults to match what we learned from the announce
       _serilogger.Debug("Game.cs: Setting ship instance starting values to defaults");
@@ -694,14 +697,14 @@ public partial class Game : Node
       AddChild(playerShipThingInstance);
 
       // if the player is not us and we are ingame, play the warp in sound
-      if (inGame == true && uuid != myUuid) shipInstance.GetNode<AudioStreamPlayer2D>("WarpInSound").Play();
+      if (inGame == true && gameObject.Uuid != myUuid) shipInstance.GetNode<AudioStreamPlayer2D>("WarpInSound").Play();
     }
     else return shipInstance;
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
     // where the server is using the ShipThing, this is using the PlayerShip. It may
     // or may not be significant down the line
-    playerObjects.Add(uuid, shipInstance);
+    playerObjects.Add(gameObject.Uuid, shipInstance);
 
     return shipInstance;
   }
@@ -712,15 +715,15 @@ public partial class Game : Node
   /// <param name="uuid"></param>
   /// <returns>the ship instance</returns>
   // TODO: wouldn't it be more appropriate to call this GetShipFromUUID ? since we're fetching the ship.
-  public PlayerShip UpdateShipWithUUID(string uuid)
+  public PlayerShip UpdateShipWithUUID(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose("Game.cs: UpdateShipWithUUID");
     PlayerShip shipInstance;
-    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    if (!playerObjects.TryGetValue(gameObject.Uuid, out shipInstance))
     {
       // must've joined before us - so we didn't get the create event, create it
-      _serilogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
-      shipInstance = this.CreateShipForUUID(uuid);
+      _serilogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + gameObject.Uuid);
+      shipInstance = this.CreateShipForUUID(gameObject);
     }
     return shipInstance;
   }

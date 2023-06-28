@@ -78,8 +78,8 @@ public partial class PlayerShip : CharacterBody2D
 
     HitPoints = gameObject.HitPoints;
 
-    _serilogger.Verbose($"PlayerShip.cs: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
-    _serilogger.Verbose($"PlayerShip.cs: Incoming position: {gameObject.PositionX},{gameObject.PositionY}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Incoming position: {gameObject.PositionX},{gameObject.PositionY}");
 
     targetPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
     targetRotation = gameObject.Angle;
@@ -178,9 +178,12 @@ public partial class PlayerShip : CharacterBody2D
     CheckMissileReload((float)delta);
     UpdateHitPointRing();
 
-    RotationDegrees = Mathf.Lerp(RotationDegrees, targetRotation, 0.5f);
-    CurrentVelocity = Mathf.Lerp(CurrentVelocity, targetVelocity, 0.5f);
-    GlobalPosition = GlobalPosition.Lerp(targetPosition, (float)delta * CurrentVelocity);
+    RotationDegrees = Mathf.Lerp(RotationDegrees, targetRotation, 0.2f);
+    CurrentVelocity = Mathf.Lerp(CurrentVelocity, targetVelocity, 0.2f);
+
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Target position: {targetPosition.X},{targetPosition.Y}");
+    GlobalPosition = GlobalPosition.Lerp(targetPosition, 0.2f);
   }
 
 
