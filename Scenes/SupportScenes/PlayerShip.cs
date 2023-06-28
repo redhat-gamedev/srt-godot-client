@@ -178,7 +178,23 @@ public partial class PlayerShip : CharacterBody2D
     CheckMissileReload((float)delta);
     UpdateHitPointRing();
 
-    RotationDegrees = Mathf.Lerp(RotationDegrees, targetRotation, 0.2f);
+    _serilogger.Debug($"PlayerShip.cs: {uuid}: Current rotation: {RotationDegrees} Target rotation: {targetRotation}");
+
+    // TODO: this results in a little bit of a hitch when the ship crosses the rotation
+    // boundary. There's probably a way to improve how this lerps across the boundary
+
+    // check if the target rotation is more than 350 out from the current rotation
+    if (Mathf.Abs(RotationDegrees - targetRotation) > 350)
+    {
+      // if so, just set the rotation to the target rotation
+      RotationDegrees = targetRotation;
+    }
+    else
+    {
+      // otherwise, lerp
+      RotationDegrees = Mathf.Lerp(RotationDegrees, targetRotation, 0.2f);
+    }
+
     CurrentVelocity = Mathf.Lerp(CurrentVelocity, targetVelocity, 0.2f);
 
     _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
