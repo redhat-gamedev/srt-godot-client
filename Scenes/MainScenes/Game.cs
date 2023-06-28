@@ -44,8 +44,8 @@ public partial class Game : Node
   float radarRefreshTimer = 0;
 
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
-  Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
-  Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
+  public Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
+  public Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
   PlayerShip myShip = null;
 
   PackedScene PackedMissile = (PackedScene)ResourceLoader.Load("res://Scenes/SupportScenes/SpaceMissile.tscn");
@@ -66,9 +66,12 @@ public partial class Game : Node
   public ConcurrentQueue<GameEvent.GameObject> MissileUpdateQueue = new ConcurrentQueue<GameEvent.GameObject>();
   public ConcurrentQueue<GameEvent.GameObject> MissileDestroyQueue = new ConcurrentQueue<GameEvent.GameObject>();
 
-  public ConcurrentQueue<GameEvent> GameEventBufferQueue = new ConcurrentQueue<GameEvent>();
+  public ConcurrentQueue<(GameEvent gameEvent, long DTDiff)> GameUpdateBufferQueue =
+    new ConcurrentQueue<(GameEvent gameEvent, long DTDiff)>();
 
-  public int bufferMessagesCount = 2;
+  // use auto-implemented properties?
+  public UInt32 bufferMessagesCount = 2;
+  public UInt32 sequenceNumber = 0;
 
   /* PLAYER DEFAULTS AND CONFIG */
 
@@ -311,6 +314,57 @@ public partial class Game : Node
     }
   }
 
+  void ProcessGameUpdateBuffer()
+  {
+    // if the GameEventBufferQueue is shorter than the bufferMessagesCount, return
+    if (GameUpdateBufferQueue.Count < bufferMessagesCount)
+    {
+      _serilogger.Verbose("Game.cs: GameUpdateBufferQueue is too short, returning");
+      return;
+    }
+
+    // since we made it here, we have at least bufferMessageCount in the queue,
+    // so we can dequeue the first event on the GameEventBufferQueue and process it
+    if (GameUpdateBufferQueue.TryDequeue(out (GameEvent theEvent, long theDTDiff) tuple))
+    {
+      // we found something to dequeue, so process the objects in the message
+      _serilogger.Verbose("Game.cs: GameUpdateBufferQueue has something, processing...");
+      GameEvent dequeuedEvent = tuple.theEvent;
+      long DTDiff = tuple.theDTDiff;
+
+      // updates may have many objects to handle
+      // iterate over the GameObjects in egeb and handle each
+      foreach (GameEvent.GameObject gameObject in dequeuedEvent.GameObjects)
+      {
+        // TODO: i don't think this new tuple is required since we just created the tuple above when we dequeued
+        // make a new tuple of the gameObject and the dtdiff
+        (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, DTDiff);
+
+        if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
+        {
+          _serilogger.Warning("Game.cs: got update event with invalid UUID, IGNORING...");
+          return;
+        }
+
+        switch (gameObject.GameObjectType)
+        {
+          case GameEvent.GameObjectType.GameObjectTypePlayer:
+            _serilogger.Verbose($"Game.cs: Got update for player {gameObject.Uuid}");
+            // send the whole tuple instead of the egeb part so that we can calculate the true
+            // time later
+            PlayerUpdateQueue.Enqueue(newTuple);
+            break;
+
+          case GameEvent.GameObjectType.GameObjectTypeMissile:
+            // TODO: probably should modify the missile stuff to take the dtdiff as well
+            _serilogger.Verbose($"Game.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+            MissileUpdateQueue.Enqueue(gameObject);
+            break;
+        }
+      }
+    }
+  }
+
   void ProcessPlayerCreate()
   {
     GameEvent.GameObject gameObject = null;
@@ -324,7 +378,7 @@ public partial class Game : Node
       }
 
       _serilogger.Debug($"Game.cs: Dequeuing player create message for {gameObject.Uuid}");
-      PlayerShip newShip = CreateShipForUUID(gameObject.Uuid);
+      PlayerShip newShip = CreateShipForUUID(gameObject);
       newShip.UpdateFromGameEventBuffer(gameObject);
     }
   }
@@ -348,7 +402,7 @@ public partial class Game : Node
       totalLag += DTDiff;
       updatesProcessed += 1;
 
-      PlayerShip ship = UpdateShipWithUUID(gameUpdateTuple.gameObject.Uuid);
+      PlayerShip ship = UpdateShipWithUUID(gameUpdateTuple.gameObject);
       ship.UpdateFromGameEventBuffer(gameUpdateTuple.gameObject);
     }
   }
@@ -479,6 +533,8 @@ public partial class Game : Node
     }
     updateWhoAmI();
 
+    ProcessGameUpdateBuffer();
+
     // we may eventually need to throw away some of these if the FPS starts slowing
     ProcessPlayerCreate();
     ProcessPlayerUpdate();
@@ -605,9 +661,9 @@ public partial class Game : Node
   /// </summary>
   /// <param name="uuid"></param>
   /// <returns>the created ship instance</returns>
-  public PlayerShip CreateShipForUUID(string uuid)
+  public PlayerShip CreateShipForUUID(GameEvent.GameObject gameObject)
   {
-    _serilogger.Debug("Game.cs: CreateShipForUUID: " + uuid);
+    _serilogger.Debug("Game.cs: CreateShipForUUID: " + gameObject.Uuid);
     // TODO: check to ensure it doesn't already exist
 
     PlayerShip shipInstance;
@@ -617,12 +673,15 @@ public partial class Game : Node
     //       it doesn't know about, but that could happen before we've received the announce. It's nice to
     //       see ships moving around on the login screen. maybe we need to re-initialize all the known ships on
     //       joining
-    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    if (!playerObjects.TryGetValue(gameObject.Uuid, out shipInstance))
     {
       // we didn't find a matching ship in the playerObjects dictionary, so create a new instance
       Node2D playerShipThingInstance = (Node2D)PlayerShipThing.Instantiate();
       shipInstance = playerShipThingInstance.GetNode<PlayerShip>("PlayerShip"); // get the PlayerShip (a CharacterBody2D) child node
-      shipInstance.uuid = uuid;
+      shipInstance.uuid = gameObject.Uuid;
+      shipInstance.GlobalPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+      shipInstance.RotationDegrees = gameObject.Angle;
+      shipInstance.CurrentVelocity = gameObject.AbsoluteVelocity;
 
       // set the instance defaults to match what we learned from the announce
       _serilogger.Debug("Game.cs: Setting ship instance starting values to defaults");
@@ -638,14 +697,14 @@ public partial class Game : Node
       AddChild(playerShipThingInstance);
 
       // if the player is not us and we are ingame, play the warp in sound
-      if (inGame == true && uuid != myUuid) shipInstance.GetNode<AudioStreamPlayer2D>("WarpInSound").Play();
+      if (inGame == true && gameObject.Uuid != myUuid) shipInstance.GetNode<AudioStreamPlayer2D>("WarpInSound").Play();
     }
     else return shipInstance;
 
     // TODO: this is inconsistent with the way the server uses the playerObjects array
     // where the server is using the ShipThing, this is using the PlayerShip. It may
     // or may not be significant down the line
-    playerObjects.Add(uuid, shipInstance);
+    playerObjects.Add(gameObject.Uuid, shipInstance);
 
     return shipInstance;
   }
@@ -656,15 +715,15 @@ public partial class Game : Node
   /// <param name="uuid"></param>
   /// <returns>the ship instance</returns>
   // TODO: wouldn't it be more appropriate to call this GetShipFromUUID ? since we're fetching the ship.
-  public PlayerShip UpdateShipWithUUID(string uuid)
+  public PlayerShip UpdateShipWithUUID(GameEvent.GameObject gameObject)
   {
     _serilogger.Verbose("Game.cs: UpdateShipWithUUID");
     PlayerShip shipInstance;
-    if (!playerObjects.TryGetValue(uuid, out shipInstance))
+    if (!playerObjects.TryGetValue(gameObject.Uuid, out shipInstance))
     {
       // must've joined before us - so we didn't get the create event, create it
-      _serilogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + uuid);
-      shipInstance = this.CreateShipForUUID(uuid);
+      _serilogger.Debug("Game.cs: UpdateShipWithUUID: ship doesn't exist, creating " + gameObject.Uuid);
+      shipInstance = this.CreateShipForUUID(gameObject);
     }
     return shipInstance;
   }
@@ -682,12 +741,13 @@ public partial class Game : Node
       _serilogger.Debug($"Game.cs: checking hitpoints for {uuid}");
       if (hitPoints <= 0)
       {
+        // TODO: would need to play the explode animation
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
         shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
       }
       else
       {
-        _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, warp out");
+        _serilogger.Debug($"Game.cs: hitpoints for {uuid} is > 0, warp out");
         shipInstance.GetNode<AudioStreamPlayer2D>("WarpOutSound").Play();
       }
 
@@ -855,8 +915,8 @@ public partial class Game : Node
     // if we don't, do nothing, since there's nothing displayed yet to remove
     if (missileObjects.TryGetValue(uuid, out missileInstance))
     {
-      missileInstance.Expire();
-      missileObjects.Remove(uuid);
+      _serilogger.Debug($"Game.cs: DestroyMissileWithUUID Expiring {uuid} with sequence {sequenceNumber}");
+      missileInstance.Expire(sequenceNumber);
     }
     else
     {
@@ -928,6 +988,10 @@ public partial class Game : Node
     if (what == NotificationWMCloseRequest)
     {
       _serilogger.Information("Game.cs: Got quit notification");
+
+      // stop the background music
+      backgroundMusic.Stop();
+
       // check if our UUID is set. If it isn't, we don't have to send a leave
       // message for our player, so we can just return
       if (myUuid == null) return;

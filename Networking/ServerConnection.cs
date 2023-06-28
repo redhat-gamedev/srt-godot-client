@@ -83,6 +83,23 @@ public partial class ServerConnection : Node
       MemoryStream st = new MemoryStream(binaryBody, false);
       GameEvent egeb = Serializer.Deserialize<GameEvent>(st);
 
+      // for game update messages, check the sequence. otherwise, ignore the sequence number
+      if (egeb.game_event_type == GameEvent.GameEventType.GameEventTypeUpdate)
+      {
+        if (egeb.Sequence > MyGame.sequenceNumber)
+        {
+          _serilogger.Verbose("ServerConnection.cs: Previous sequence number: " + MyGame.sequenceNumber + " New sequence number: " + egeb.Sequence);
+          MyGame.sequenceNumber = egeb.Sequence;
+        }
+        else
+        {
+          _serilogger.Debug($"ServerConnection.cs: Update message was out of sequence");
+          _serilogger.Debug($"ServerConnection.cs: {MyGame.sequenceNumber} vs {egeb.Sequence}");
+          _serilogger.Debug($"ServerConnection.cs: {egeb.game_event_type}");
+          return; // ignore out of sequence updates
+        }
+      }
+
       long messageDT;
       if (message.Properties != null)
       {
@@ -305,6 +322,7 @@ public partial class ServerConnection : Node
   {
     // extract the event from the tuple
     GameEvent egeb = tuple.egeb;
+    _serilogger.Verbose("ServerConnection.cs: Processing game event");
     try
     {
       switch (egeb.game_event_type)
@@ -346,11 +364,13 @@ public partial class ServerConnection : Node
             {
               case GameEvent.GameObjectType.GameObjectTypePlayer:
                 _serilogger.Debug($"ServerConnection.cs: Got destroy for player {gameObject.Uuid}");
+                _serilogger.Debug($"ServerConnection.cs: Sequence number {egeb.Sequence}");
                 MyGame.PlayerDestroyQueue.Enqueue(gameObject);
                 break;
 
               case GameEvent.GameObjectType.GameObjectTypeMissile:
                 _serilogger.Debug($"ServerConnection.cs: Got destroy for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
+                _serilogger.Debug($"ServerConnection.cs: Sequence number {egeb.Sequence}");
                 MyGame.MissileDestroyQueue.Enqueue(gameObject);
                 break;
             }
@@ -365,52 +385,8 @@ public partial class ServerConnection : Node
           _serilogger.Verbose("ServerConnection.cs: EntityGameEventBuffer [update]");
 
           // we got an update, so add it to the GameEventBufferQueue
-          MyGame.GameEventBufferQueue.Enqueue(egeb);
+          MyGame.GameUpdateBufferQueue.Enqueue((egeb, tuple.DTDiff));
 
-          // if the GameEventBufferQueue is shorter than the bufferMessagesCount, return
-          if (MyGame.GameEventBufferQueue.Count < MyGame.bufferMessagesCount)
-          {
-            _serilogger.Verbose("ServerConnection.cs: GameEventBufferQueue is too short, returning");
-            return;
-          }
-
-          // since we made it here, we have at least bufferMessageCount in the queue,
-          // so we can dequeue the first event on the GameEventBufferQueue and process it
-          if (MyGame.GameEventBufferQueue.TryDequeue(out GameEvent dequeuedEvent))
-          {
-            // we found something to dequeue, so process the objects in the message
-            _serilogger.Verbose("ServerConnection.cs: GameEventBufferQueue has something, processing...");
-
-            // updates may have many objects to handle
-            // iterate over the GameObjects in egeb and handle each
-            foreach (GameEvent.GameObject gameObject in egeb.GameObjects)
-            {
-              // make a new tuple of the gameObject and the dtdiff
-              (GameEvent.GameObject go, long diffTime) newTuple = (gameObject, tuple.DTDiff);
-
-              if (gameObject.Uuid == null || gameObject.Uuid.Length < 1) // TODO: any additional validation goes here
-              {
-                _serilogger.Warning("ServerConnection.cs: got update event with invalid UUID, IGNORING...");
-                return;
-              }
-
-              switch (gameObject.GameObjectType)
-              {
-                case GameEvent.GameObjectType.GameObjectTypePlayer:
-                  _serilogger.Verbose($"ServerConnection.cs: Got update for player {gameObject.Uuid}");
-                  // send the whole tuple instead of the egeb part so that we can calculate the true
-                  // time later
-                  MyGame.PlayerUpdateQueue.Enqueue(newTuple);
-                  break;
-
-                case GameEvent.GameObjectType.GameObjectTypeMissile:
-                  // TODO: probably should modify the missile stuff to take the dtdiff as well
-                  _serilogger.Verbose($"ServerConnection.cs: Got update for missile {gameObject.Uuid} owner {gameObject.OwnerUuid}");
-                  MyGame.MissileUpdateQueue.Enqueue(gameObject);
-                  break;
-              }
-            }
-          }
           break;
 
         default:

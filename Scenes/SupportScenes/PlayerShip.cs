@@ -47,6 +47,10 @@ public partial class PlayerShip : CharacterBody2D
 
   Sprite2D hitPointRing;
 
+  Vector2 targetPosition;
+  float targetRotation;
+  float targetVelocity;
+
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
   /// </summary>
@@ -74,11 +78,12 @@ public partial class PlayerShip : CharacterBody2D
 
     HitPoints = gameObject.HitPoints;
 
-    float xPos = Mathf.Lerp(GlobalPosition.X, gameObject.PositionX, 0.5f);
-    float yPos = Mathf.Lerp(GlobalPosition.Y, gameObject.PositionY, 0.5f);
-    GlobalPosition = new Vector2(xPos, yPos);
-    RotationDegrees = Mathf.Lerp(RotationDegrees, gameObject.Angle, 0.5f);
-    CurrentVelocity = Mathf.Lerp(CurrentVelocity, gameObject.AbsoluteVelocity, 0.5f);
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Incoming position: {gameObject.PositionX},{gameObject.PositionY}");
+
+    targetPosition = new Vector2(gameObject.PositionX, gameObject.PositionY);
+    targetRotation = gameObject.Angle;
+    targetVelocity = gameObject.AbsoluteVelocity;
   }
 
   /// <summary>
@@ -172,17 +177,42 @@ public partial class PlayerShip : CharacterBody2D
   {
     CheckMissileReload((float)delta);
     UpdateHitPointRing();
+
+    _serilogger.Debug($"PlayerShip.cs: {uuid}: Current rotation: {RotationDegrees} Target rotation: {targetRotation}");
+
+    // TODO: this results in a little bit of a hitch when the ship crosses the rotation
+    // boundary. There's probably a way to improve how this lerps across the boundary
+
+    // check if the target rotation is more than 350 out from the current rotation
+    if (Mathf.Abs(RotationDegrees - targetRotation) > 350)
+    {
+      // if so, just set the rotation to the target rotation
+      RotationDegrees = targetRotation;
+    }
+    else
+    {
+      // otherwise, lerp
+      RotationDegrees = Mathf.Lerp(RotationDegrees, targetRotation, 0.2f);
+    }
+
+    CurrentVelocity = Mathf.Lerp(CurrentVelocity, targetVelocity, 0.2f);
+
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current position:  {GlobalPosition.X},{GlobalPosition.Y}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Target position: {targetPosition.X},{targetPosition.Y}");
+    GlobalPosition = GlobalPosition.Lerp(targetPosition, 0.2f);
   }
 
+
+// TODO: probably need to implement ship markedForDestruction like we have for missiles
   void _on_ExplodeSound_finished()
   {
-    _serilogger.Verbose($"PlayerShip.cs: Explosion sound finished - expiring player");
+    _serilogger.Debug($"PlayerShip.cs: Explosion sound finished - expiring player");
     ExpirePlayer();
   }
 
   void _on_WarpOutSound_finished()
   {
-    _serilogger.Verbose($"PlayerShip.cs: Warp out sound finished - expiring player");
+    _serilogger.Debug($"PlayerShip.cs: Warp out sound finished - expiring player");
     ExpirePlayer();
   }
 
