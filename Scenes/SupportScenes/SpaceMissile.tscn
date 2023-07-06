@@ -1,129 +1,318 @@
-[gd_scene load_steps=72 format=2]
+[gd_scene load_steps=72 format=3 uid="uid://bdkkkbcddvxhf"]
 
-[ext_resource path="res://Assets/Sprites/Weapons/missle.png" type="Texture2D" id=1]
-[ext_resource path="res://Scenes/SupportScenes/SpaceMissile.cs" type="Script" id=2]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0003.png" type="Texture2D" id=3]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0004.png" type="Texture2D" id=4]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0005.png" type="Texture2D" id=5]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0006.png" type="Texture2D" id=6]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0007.png" type="Texture2D" id=7]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0002.png" type="Texture2D" id=8]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0001.png" type="Texture2D" id=9]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0008.png" type="Texture2D" id=10]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0009.png" type="Texture2D" id=11]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0010.png" type="Texture2D" id=12]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0011.png" type="Texture2D" id=13]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0012.png" type="Texture2D" id=14]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0013.png" type="Texture2D" id=15]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0014.png" type="Texture2D" id=16]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0016.png" type="Texture2D" id=17]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0015.png" type="Texture2D" id=18]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0017.png" type="Texture2D" id=19]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0018.png" type="Texture2D" id=20]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0019.png" type="Texture2D" id=21]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0020.png" type="Texture2D" id=22]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0021.png" type="Texture2D" id=23]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0022.png" type="Texture2D" id=24]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0024.png" type="Texture2D" id=25]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0023.png" type="Texture2D" id=26]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0025.png" type="Texture2D" id=27]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0026.png" type="Texture2D" id=28]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0028.png" type="Texture2D" id=29]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0029.png" type="Texture2D" id=30]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0031.png" type="Texture2D" id=31]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0030.png" type="Texture2D" id=32]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0032.png" type="Texture2D" id=33]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0033.png" type="Texture2D" id=34]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0027.png" type="Texture2D" id=35]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0015.png" type="Texture2D" id=36]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0016.png" type="Texture2D" id=37]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0017.png" type="Texture2D" id=38]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0014.png" type="Texture2D" id=39]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0013.png" type="Texture2D" id=40]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0003.png" type="Texture2D" id=41]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0018.png" type="Texture2D" id=42]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0004.png" type="Texture2D" id=43]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0011.png" type="Texture2D" id=44]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0002.png" type="Texture2D" id=45]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0020.png" type="Texture2D" id=46]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0022.png" type="Texture2D" id=47]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0021.png" type="Texture2D" id=48]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0023.png" type="Texture2D" id=49]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0024.png" type="Texture2D" id=50]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0001.png" type="Texture2D" id=51]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0025.png" type="Texture2D" id=52]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0014.png" type="Texture2D" id=53]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0005.png" type="Texture2D" id=54]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0009.png" type="Texture2D" id=55]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0017.png" type="Texture2D" id=56]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0008.png" type="Texture2D" id=57]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0012.png" type="Texture2D" id=58]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0007.png" type="Texture2D" id=59]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0006.png" type="Texture2D" id=60]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0016.png" type="Texture2D" id=61]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0013.png" type="Texture2D" id=62]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0010.png" type="Texture2D" id=63]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0015.png" type="Texture2D" id=64]
-[ext_resource path="res://Assets/Sounds/pew.wav" type="AudioStream" id=65]
-[ext_resource path="res://Assets/Sounds/missile-explode.wav" type="AudioStream" id=66]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0018.png" type="Texture2D" id=67]
-[ext_resource path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0019.png" type="Texture2D" id=68]
+[ext_resource type="Texture2D" uid="uid://ct28luy7b0pne" path="res://Assets/Sprites/Weapons/missle.png" id="1"]
+[ext_resource type="Script" path="res://Scenes/SupportScenes/SpaceMissile.cs" id="2"]
+[ext_resource type="Texture2D" uid="uid://bxqfs1r4ovwbu" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0003.png" id="3"]
+[ext_resource type="Texture2D" uid="uid://bshign30eui0e" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0004.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://c7bpu7bo6axf5" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0005.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://dpjo6buy8p4fi" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0006.png" id="6"]
+[ext_resource type="Texture2D" uid="uid://b5ctyj2wi3ksb" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0007.png" id="7"]
+[ext_resource type="Texture2D" uid="uid://dlsxgmk372nu2" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0002.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://dvj5gkjg4um0a" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0001.png" id="9"]
+[ext_resource type="Texture2D" uid="uid://3avih3udfaok" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0008.png" id="10"]
+[ext_resource type="Texture2D" uid="uid://dwqklpfh5s8n3" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0009.png" id="11"]
+[ext_resource type="Texture2D" uid="uid://bnwqfomrvt8tw" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0010.png" id="12"]
+[ext_resource type="Texture2D" uid="uid://clvqopia4aohr" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0011.png" id="13"]
+[ext_resource type="Texture2D" uid="uid://osfbdmft422s" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0012.png" id="14"]
+[ext_resource type="Texture2D" uid="uid://b8ecld3adfjdl" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0013.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://dudq5crtdqofj" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0014.png" id="16"]
+[ext_resource type="Texture2D" uid="uid://grej3ctwlee5" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0016.png" id="17"]
+[ext_resource type="Texture2D" uid="uid://c67ayil4kgdmj" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0015.png" id="18"]
+[ext_resource type="Texture2D" uid="uid://covmb7n20u6x6" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0017.png" id="19"]
+[ext_resource type="Texture2D" uid="uid://ds806besv7mg2" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0018.png" id="20"]
+[ext_resource type="Texture2D" uid="uid://c72m5fdinow61" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0019.png" id="21"]
+[ext_resource type="Texture2D" uid="uid://b503jmp4k0v3i" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0020.png" id="22"]
+[ext_resource type="Texture2D" uid="uid://dv1bef1urc3h3" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0021.png" id="23"]
+[ext_resource type="Texture2D" uid="uid://b6mklcfpsj3ip" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0022.png" id="24"]
+[ext_resource type="Texture2D" uid="uid://c6d7niuci7tq8" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0024.png" id="25"]
+[ext_resource type="Texture2D" uid="uid://brre2pm6g6wxg" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0023.png" id="26"]
+[ext_resource type="Texture2D" uid="uid://c5tf7pltfiylv" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0025.png" id="27"]
+[ext_resource type="Texture2D" uid="uid://c1cshg8do0wg8" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0026.png" id="28"]
+[ext_resource type="Texture2D" uid="uid://pjfqs6yu73du" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0028.png" id="29"]
+[ext_resource type="Texture2D" uid="uid://dskqy72jrvgtp" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0029.png" id="30"]
+[ext_resource type="Texture2D" uid="uid://cdjx2k3x2fodu" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0031.png" id="31"]
+[ext_resource type="Texture2D" uid="uid://nqf6qu8wfhv8" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0030.png" id="32"]
+[ext_resource type="Texture2D" uid="uid://syfn1d0d3o6f" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0032.png" id="33"]
+[ext_resource type="Texture2D" uid="uid://cr3jmu64yteyu" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0033.png" id="34"]
+[ext_resource type="Texture2D" uid="uid://cm53yupev7cn4" path="res://Assets/Sprites/Weapons/Missile_Launch_Animation/2022_Launch_missile.png0027.png" id="35"]
+[ext_resource type="Texture2D" uid="uid://oit6y7elumnh" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0015.png" id="36"]
+[ext_resource type="Texture2D" uid="uid://d0os0nvi25u2v" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0016.png" id="37"]
+[ext_resource type="Texture2D" uid="uid://casf1vidqv5ll" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0017.png" id="38"]
+[ext_resource type="Texture2D" uid="uid://3vr7l5t76bhg" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0014.png" id="39"]
+[ext_resource type="Texture2D" uid="uid://chcjh7acju7yj" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0013.png" id="40"]
+[ext_resource type="Texture2D" uid="uid://b4dtjg47x5ygb" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0003.png" id="41"]
+[ext_resource type="Texture2D" uid="uid://htnm80inkh7e" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0018.png" id="42"]
+[ext_resource type="Texture2D" uid="uid://bl4moiwme14f5" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0004.png" id="43"]
+[ext_resource type="Texture2D" uid="uid://b7aqu40imvkox" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0011.png" id="44"]
+[ext_resource type="Texture2D" uid="uid://bianp7bn6mo55" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0002.png" id="45"]
+[ext_resource type="Texture2D" uid="uid://c55fxqdmmfuop" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0020.png" id="46"]
+[ext_resource type="Texture2D" uid="uid://dhln8e5yiheyh" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0022.png" id="47"]
+[ext_resource type="Texture2D" uid="uid://b4i21q735h7rj" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0021.png" id="48"]
+[ext_resource type="Texture2D" uid="uid://ya1b7046jbl5" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0023.png" id="49"]
+[ext_resource type="Texture2D" uid="uid://oaag4kkaor25" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0024.png" id="50"]
+[ext_resource type="Texture2D" uid="uid://b0u6ucj1bsjyr" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0001.png" id="51"]
+[ext_resource type="Texture2D" uid="uid://bjlp1dxlyicb6" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0025.png" id="52"]
+[ext_resource type="Texture2D" uid="uid://b5g1mdpfhlprn" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0014.png" id="53"]
+[ext_resource type="Texture2D" uid="uid://bjpaxmbglgyvy" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0005.png" id="54"]
+[ext_resource type="Texture2D" uid="uid://3616cii4gydg" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0009.png" id="55"]
+[ext_resource type="Texture2D" uid="uid://jaou2dpr0tcv" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0017.png" id="56"]
+[ext_resource type="Texture2D" uid="uid://ctibqmog8orla" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0008.png" id="57"]
+[ext_resource type="Texture2D" uid="uid://cuvaix1qhgcer" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0012.png" id="58"]
+[ext_resource type="Texture2D" uid="uid://cplqok55oymu5" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0007.png" id="59"]
+[ext_resource type="Texture2D" uid="uid://bepn6ow8fi5qe" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0006.png" id="60"]
+[ext_resource type="Texture2D" uid="uid://b4a2xcx57uuin" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0016.png" id="61"]
+[ext_resource type="Texture2D" uid="uid://08gjae2f54s4" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0013.png" id="62"]
+[ext_resource type="Texture2D" uid="uid://2kxns1iv077r" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0010.png" id="63"]
+[ext_resource type="Texture2D" uid="uid://hmrrqxh5kgbq" path="res://Assets/Sprites/Weapons/Missile_Explosion_Animation/2022_explosion_missile.png0015.png" id="64"]
+[ext_resource type="AudioStream" uid="uid://vqf551nkca77" path="res://Assets/Sounds/missile-explode.wav" id="66"]
+[ext_resource type="Texture2D" uid="uid://c02unngkljjac" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0018.png" id="67"]
+[ext_resource type="AudioStream" uid="uid://bwumd4762hsjf" path="res://Assets/Sounds/SRT_SFX_G1_Missile_Launch-short-faded.wav" id="67_vy151"]
+[ext_resource type="Texture2D" uid="uid://c3t1t2n582ux5" path="res://Assets/Sprites/Weapons/Missile_Traveling_Animation/2022_Traveling_missile.png0019.png" id="68"]
 
-[sub_resource type="CapsuleShape2D" id=1]
+[sub_resource type="CapsuleShape2D" id="1"]
 radius = 40.0
 height = 80.0
 
-[sub_resource type="SpriteFrames" id=2]
-animations = [ {
-"frames": [ ExtResource( 9 ), ExtResource( 8 ), ExtResource( 3 ), ExtResource( 4 ), ExtResource( 5 ), ExtResource( 6 ), ExtResource( 7 ), ExtResource( 10 ), ExtResource( 11 ), ExtResource( 12 ), ExtResource( 13 ), ExtResource( 14 ), ExtResource( 15 ), ExtResource( 16 ), ExtResource( 18 ), ExtResource( 17 ), ExtResource( 19 ), ExtResource( 20 ), ExtResource( 21 ), ExtResource( 22 ), ExtResource( 23 ), ExtResource( 24 ), ExtResource( 26 ), ExtResource( 25 ), ExtResource( 27 ), ExtResource( 28 ), ExtResource( 35 ), ExtResource( 29 ), ExtResource( 30 ), ExtResource( 32 ), ExtResource( 31 ), ExtResource( 33 ), ExtResource( 34 ) ],
+[sub_resource type="SpriteFrames" id="2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34")
+}],
 "loop": false,
-"name": "launch",
+"name": &"launch",
 "speed": 60.0
 }, {
-"frames": [ ExtResource( 40 ), ExtResource( 39 ), ExtResource( 36 ), ExtResource( 37 ), ExtResource( 38 ), ExtResource( 67 ), ExtResource( 68 ), ExtResource( 46 ), ExtResource( 48 ), ExtResource( 47 ), ExtResource( 49 ), ExtResource( 50 ), ExtResource( 52 ) ],
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("40")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38")
+}, {
+"duration": 1.0,
+"texture": ExtResource("67")
+}, {
+"duration": 1.0,
+"texture": ExtResource("68")
+}, {
+"duration": 1.0,
+"texture": ExtResource("46")
+}, {
+"duration": 1.0,
+"texture": ExtResource("48")
+}, {
+"duration": 1.0,
+"texture": ExtResource("47")
+}, {
+"duration": 1.0,
+"texture": ExtResource("49")
+}, {
+"duration": 1.0,
+"texture": ExtResource("50")
+}, {
+"duration": 1.0,
+"texture": ExtResource("52")
+}],
 "loop": true,
-"name": "travel",
+"name": &"travel",
 "speed": 60.0
-} ]
+}]
 
-[sub_resource type="SpriteFrames" id=3]
-animations = [ {
-"frames": [ ExtResource( 51 ), ExtResource( 45 ), ExtResource( 41 ), ExtResource( 43 ), ExtResource( 54 ), ExtResource( 60 ), ExtResource( 59 ), ExtResource( 57 ), ExtResource( 55 ), ExtResource( 63 ), ExtResource( 44 ), ExtResource( 58 ), ExtResource( 62 ), ExtResource( 53 ), ExtResource( 64 ), ExtResource( 61 ), ExtResource( 56 ), ExtResource( 42 ) ],
+[sub_resource type="SpriteFrames" id="3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("51")
+}, {
+"duration": 1.0,
+"texture": ExtResource("45")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41")
+}, {
+"duration": 1.0,
+"texture": ExtResource("43")
+}, {
+"duration": 1.0,
+"texture": ExtResource("54")
+}, {
+"duration": 1.0,
+"texture": ExtResource("60")
+}, {
+"duration": 1.0,
+"texture": ExtResource("59")
+}, {
+"duration": 1.0,
+"texture": ExtResource("57")
+}, {
+"duration": 1.0,
+"texture": ExtResource("55")
+}, {
+"duration": 1.0,
+"texture": ExtResource("63")
+}, {
+"duration": 1.0,
+"texture": ExtResource("44")
+}, {
+"duration": 1.0,
+"texture": ExtResource("58")
+}, {
+"duration": 1.0,
+"texture": ExtResource("62")
+}, {
+"duration": 1.0,
+"texture": ExtResource("53")
+}, {
+"duration": 1.0,
+"texture": ExtResource("64")
+}, {
+"duration": 1.0,
+"texture": ExtResource("61")
+}, {
+"duration": 1.0,
+"texture": ExtResource("56")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42")
+}],
 "loop": false,
-"name": "default",
+"name": &"default",
 "speed": 40.0
-} ]
+}]
 
 [node name="Area2D" type="Area2D"]
-script = ExtResource( 2 )
-__meta__ = {
-"_edit_horizontal_guides_": [  ]
-}
+script = ExtResource("2")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2( 0.1, 0.1 )
-texture = ExtResource( 1 )
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("1")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-scale = Vector2( 0.25, 0.25 )
-shape = SubResource( 1 )
+scale = Vector2(0.25, 0.25)
+shape = SubResource("1")
 
 [node name="Animations" type="AnimatedSprite2D" parent="."]
-position = Vector2( 0, 59 )
+position = Vector2(0, 59)
 rotation = 3.14159
-scale = Vector2( 0.1, 0.1 )
-frames = SubResource( 2 )
-animation = "travel"
+scale = Vector2(0.1, 0.1)
+sprite_frames = SubResource("2")
+animation = &"travel"
 
 [node name="Explosion" type="AnimatedSprite2D" parent="."]
-scale = Vector2( 0.1, 0.1 )
-frames = SubResource( 3 )
+scale = Vector2(0.1, 0.1)
+sprite_frames = SubResource("3")
 
 [node name="FireSound" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource( 65 )
+stream = ExtResource("67_vy151")
 autoplay = true
 
 [node name="ExplodeSound" type="AudioStreamPlayer2D" parent="."]
-stream = ExtResource( 66 )
+stream = ExtResource("66")
 
 [connection signal="animation_finished" from="Explosion" to="." method="_on_Explosion_animation_finished"]

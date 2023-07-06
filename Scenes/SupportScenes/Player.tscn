@@ -6,7 +6,7 @@
 [ext_resource type="Shader" path="res://Assets/UIElements/ShipShaders/HitPointRing.gdshader" id="4"]
 [ext_resource type="AudioStream" uid="uid://q881scn73iae" path="res://Assets/Sounds/ship-explode.wav" id="5"]
 [ext_resource type="AudioStream" uid="uid://cvk1pvci6t6g5" path="res://Assets/Sounds/SRT_SFX_G5-Warp-1-sec-3.wav" id="6_7s415"]
-[ext_resource type="AudioStream" uid="uid://ceu5djg6fcvtd" path="res://Assets/Sounds/400126__harrietniamh__sci-fi-warp.wav" id="7"]
+[ext_resource type="AudioStream" uid="uid://c12sfbv67qngx" path="res://Assets/Sounds/SRT_SFX_G2_Missile_Launch-3.wav" id="7_fl6c2"]
 
 [sub_resource type="ShaderMaterial" id="1"]
 resource_local_to_scene = true
@@ -100,7 +100,7 @@ stream = ExtResource("5")
 stream = ExtResource("6_7s415")
 
 [node name="WarpOutSound" type="AudioStreamPlayer2D" parent="PlayerShip"]
-stream = ExtResource("7")
+stream = ExtResource("7_fl6c2")
 
 [connection signal="finished" from="PlayerShip/ExplodeSound" to="PlayerShip" method="_on_ExplodeSound_finished"]
 [connection signal="finished" from="PlayerShip/WarpOutSound" to="PlayerShip" method="_on_WarpOutSound_finished"]

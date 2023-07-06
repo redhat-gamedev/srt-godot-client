@@ -178,7 +178,7 @@ public partial class PlayerShip : CharacterBody2D
     CheckMissileReload((float)delta);
     UpdateHitPointRing();
 
-    _serilogger.Debug($"PlayerShip.cs: {uuid}: Current rotation: {RotationDegrees} Target rotation: {targetRotation}");
+    _serilogger.Verbose($"PlayerShip.cs: {uuid}: Current rotation: {RotationDegrees} Target rotation: {targetRotation}");
 
     // TODO: this results in a little bit of a hitch when the ship crosses the rotation
     // boundary. There's probably a way to improve how this lerps across the boundary
