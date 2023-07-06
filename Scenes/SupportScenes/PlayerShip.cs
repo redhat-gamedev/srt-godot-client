@@ -51,6 +51,18 @@ public partial class PlayerShip : CharacterBody2D
   float targetRotation;
   float targetVelocity;
 
+  public enum PlayerRemoveType
+  {
+    Destroy,
+    WarpOut
+  }
+
+  private bool markedForDestruction = false;
+  private UInt32 destroyedSequenceNumber; // the sequence when this missile was marked for destruction
+
+  AudioStreamPlayer2D explodePlayer;
+  AudioStreamPlayer2D warpOutPlayer;
+
   /// <summary>
   /// Called when the node enters the scene tree for the first time.
   /// </summary>
@@ -66,6 +78,9 @@ public partial class PlayerShip : CharacterBody2D
 
     // TODO: deal with really long UUIDs
     playerIDLabel.Text = uuid;
+
+    explodePlayer = GetNode<AudioStreamPlayer2D>("ExplodeSound");
+    warpOutPlayer = GetNode<AudioStreamPlayer2D>("WarpOutSound");
   }
 
   /// <summary>
@@ -74,6 +89,9 @@ public partial class PlayerShip : CharacterBody2D
   /// <param name="egeb"></param>
   public void UpdateFromGameEventBuffer(GameEvent.GameObject gameObject)
   {
+    // if we are marked for destruction, don't process any updates
+    if (markedForDestruction) { return; }
+
     _serilogger.Verbose("PlayerShip.cs: UpdateFromGameEventBuffer");
 
     HitPoints = gameObject.HitPoints;
@@ -91,10 +109,23 @@ public partial class PlayerShip : CharacterBody2D
   /// </summary>
   public void ExpireMissile() { MyMissile = null; }
 
-  public void ExpirePlayer()
+  public void ExpirePlayer(Enum removeType, UInt32 sequenceNumber)
   {
-    // need to free the parent of the ship, which is the "shipthing"
-    GetParent().QueueFree();
+    markedForDestruction = true;
+    destroyedSequenceNumber = sequenceNumber;
+
+    switch (removeType)
+    {
+      case PlayerRemoveType.Destroy:
+        explodePlayer.Play();
+        break;
+      case PlayerRemoveType.WarpOut:
+        warpOutPlayer.Play();
+        break;
+      default:
+        _serilogger.Debug($"PlayerShip.cs: Got unknown remove enum type");
+        break;
+    }
   }
 
   // TODO: this is unused -- should we relocate fire methods from Game.cs?
@@ -173,8 +204,30 @@ public partial class PlayerShip : CharacterBody2D
     _serilogger.Verbose($"PlayerShip.cs: shader fill_ratio is {ringShader.GetShaderParameter("fill_ratio")}");
   }
 
+  void RemovePlayer()
+  {
+    UInt32 sequenceDiff = MyGame.bufferMessagesCount + destroyedSequenceNumber;
+    if (markedForDestruction && MyGame.sequenceNumber > sequenceDiff)
+    {
+      _serilogger.Verbose($"PlayerShip.cs: player {uuid} marked for destruction {destroyedSequenceNumber}");
+      _serilogger.Verbose($"PlayerShip.cs: player {uuid} current sequence {MyGame.sequenceNumber} + {MyGame.bufferMessagesCount} = {sequenceDiff}");
+
+      // TODO: check if any animations are playing and, if so, return
+
+      // check if sounds are playing
+      if (explodePlayer.Playing || warpOutPlayer.Playing) { return; }
+
+      // remove from the player object list
+      MyGame.playerObjects.Remove(uuid);
+
+      // finally, get rid of ourselves because we're truly gone now
+      GetParent().QueueFree();
+    }
+  }
+
   public override void _Process(double delta)
   {
+    RemovePlayer();
     CheckMissileReload((float)delta);
     UpdateHitPointRing();
 
@@ -206,14 +259,10 @@ public partial class PlayerShip : CharacterBody2D
 // TODO: probably need to implement ship markedForDestruction like we have for missiles
   void _on_ExplodeSound_finished()
   {
-    _serilogger.Debug($"PlayerShip.cs: Explosion sound finished - expiring player");
-    ExpirePlayer();
   }
 
   void _on_WarpOutSound_finished()
   {
-    _serilogger.Debug($"PlayerShip.cs: Warp out sound finished - expiring player");
-    ExpirePlayer();
   }
 
 }

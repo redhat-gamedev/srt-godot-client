@@ -43,6 +43,7 @@ public partial class Game : Node
   int radarRefreshTime = 1; // 1000ms = 1sec
   float radarRefreshTimer = 0;
 
+  // TODO: these should not be public and we should have accessor methods to manipulate them, most likely
   // dictionary mapping for quicker access (might not need if GetNode<> is fast enough)
   public Dictionary<String, PlayerShip> playerObjects = new Dictionary<string, PlayerShip>();
   public Dictionary<String, SpaceMissile> missileObjects = new Dictionary<string, SpaceMissile>();
@@ -719,6 +720,7 @@ public partial class Game : Node
   {
     _serilogger.Verbose("Game.cs: UpdateShipWithUUID");
     PlayerShip shipInstance;
+
     if (!playerObjects.TryGetValue(gameObject.Uuid, out shipInstance))
     {
       // must've joined before us - so we didn't get the create event, create it
@@ -743,12 +745,12 @@ public partial class Game : Node
       {
         // TODO: would need to play the explode animation
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is <= 0, exploding");
-        shipInstance.GetNode<AudioStreamPlayer2D>("ExplodeSound").Play();
+        shipInstance.ExpirePlayer(PlayerShip.PlayerRemoveType.Destroy, sequenceNumber);
       }
       else
       {
         _serilogger.Debug($"Game.cs: hitpoints for {uuid} is > 0, warp out");
-        shipInstance.GetNode<AudioStreamPlayer2D>("WarpOutSound").Play();
+        shipInstance.ExpirePlayer(PlayerShip.PlayerRemoveType.WarpOut, sequenceNumber);
       }
 
       _serilogger.Debug($"Game.cs: Expiring player {uuid}");
@@ -760,9 +762,6 @@ public partial class Game : Node
         _serilogger.Debug($"Game.cs: destroy is for our player, display game over screen");
         displayGameOverScreen();
       }
-
-      // remove our ship from the known ship objects
-      playerObjects.Remove(uuid);
     }
   }
 
