@@ -1,0 +1,12 @@
+[allowlist]
+  description = "Global Allowlist"
+
+  # Ignore based on any subset of the file path
+  paths = [
+    # Ignore all example certs
+    '''README.md'''
+  ]
+
+  # Ignore based on any subset of the line
+  regexes = [
+  ]
